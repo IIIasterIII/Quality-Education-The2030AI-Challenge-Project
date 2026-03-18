@@ -3,3 +3,6 @@ uvicorn
 pydantic
 sqlalchemy
 python-dotenv
+aiomysql
+greenlet
+alembic
