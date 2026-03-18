@@ -3,6 +3,14 @@ uvicorn
 pydantic
 sqlalchemy
 python-dotenv
-aiomysql
+pymysql
 greenlet
 alembic
+firebase-admin
+python-jose[cryptography]
+redis
+cryptography
+httpx
+python-multipart
+websockets
+pydantic[email]

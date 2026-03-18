@@ -1,4 +1,6 @@
+"use client"
 import { Button } from "@workspace/ui/components/button"
+import { loginWithGoogle } from "@/app/api/router"
 import {
   Card,
   CardAction,
@@ -11,7 +13,19 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
+import { useAppDispatch } from "@/app/store/hooks"
+import { setUser } from "@/app/store/userSlice"
+
 export function AuthPanel() {
+  const dispatch = useAppDispatch()
+
+  const handleGoogleLogin = async () => {
+    const user = await loginWithGoogle()
+    if (user) {
+      dispatch(setUser({ uid: user.uid, email: user.email || "" }))
+    }
+  }
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
@@ -54,7 +68,7 @@ export function AuthPanel() {
         <Button type="submit" className="w-full">
           Login
         </Button>
-        <Button variant="outline" className="w-full">
+        <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
           Login with Google
         </Button>
       </CardFooter>

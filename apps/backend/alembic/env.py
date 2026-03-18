@@ -53,7 +53,6 @@ async def run_async_migrations(config_dict):
     and associate a connection with the context.
     """
     
-    # Замени стандартный config на наш переданный config_dict
     connectable = async_engine_from_config(
         config_dict, 
         prefix="sqlalchemy.",
