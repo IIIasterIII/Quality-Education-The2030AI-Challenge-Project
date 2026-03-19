@@ -23,7 +23,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ThemeProvider>
           <StoreProvider>
             <AuthProvider>
-              <Navbar />
               {children}
             </AuthProvider>
           </StoreProvider>

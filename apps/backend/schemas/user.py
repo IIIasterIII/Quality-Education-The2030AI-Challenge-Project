@@ -11,3 +11,8 @@ class UserTokenSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class RoadMapCreateSchema(BaseModel):
+    title: str
+    description: Optional[str] = None
+    image: str

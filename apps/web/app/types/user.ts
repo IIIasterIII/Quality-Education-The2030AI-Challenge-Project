@@ -7,3 +7,9 @@ export interface UserData {
     isLoggedIn: boolean
     loading: boolean
 }
+
+export interface RoadMapCreateData {
+    title: string
+    description: string
+    image: File
+}

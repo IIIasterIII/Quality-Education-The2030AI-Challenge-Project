@@ -1,9 +1,6 @@
 "use client"
-import { useEffect } from "react"
 import Link from "next/link"
 import { Menu } from "lucide-react"
-
-
 import {
   NavigationMenuItem,
   NavigationMenuLink,
@@ -87,10 +84,10 @@ export function Navbar() {
   )
 }
 
-
 export function UserAvatar({ user }: { user: UserData }) {
+  const router = useRouter()
   return (
-    <Avatar>
+    <Avatar className="cursor-pointer" onClick={() => router.push(`/app/profiles/${user.firebase_uid}`)}>
       <AvatarImage src={user.avatar || ""} alt={user.username || "User"} />
       <AvatarFallback>{user.username}</AvatarFallback>
     </Avatar>
