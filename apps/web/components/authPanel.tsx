@@ -1,6 +1,10 @@
 "use client"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
 import { loginWithGoogle } from "@/app/api/router"
+import { useAppDispatch } from "@/app/store/hooks"
+import { setUser } from "@/app/store/userSlice"
 import {
   Card,
   CardAction,
@@ -10,19 +14,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
-
-import { useAppDispatch } from "@/app/store/hooks"
-import { setUser } from "@/app/store/userSlice"
 
 export function AuthPanel() {
   const dispatch = useAppDispatch()
 
   const handleGoogleLogin = async () => {
-    const user = await loginWithGoogle()
-    if (user) {
-      dispatch(setUser({ uid: user.uid, email: user.email || "" }))
+    const userData = await loginWithGoogle()
+    if (userData) {
+      dispatch(setUser(
+        {
+          id: userData.id,
+          firebase_uid: userData.firebase_uid,
+          email: userData.email,
+          username: userData.username,
+          avatar: userData.avatar
+        }
+      ))
     }
   }
 

@@ -2,6 +2,7 @@ from db.session import get_db
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from schemas.user import UserTokenSchema
+from db.models import User
 from jose import jwt
 import os
 from dotenv import load_dotenv
@@ -15,12 +16,19 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> UserTokenSchema:
     token = request.cookies.get("session_token")
+    print(f"Token: {token}")
     if not token:
         raise HTTPException(status_code=401, detail="No session token provided")
     try:
-        user = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        firebase_uid = payload.get("firebase_uid")
+        print(f"Firebase UID: {firebase_uid}")
+        user = db.query(User).filter(User.firebase_uid == firebase_uid).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
         return user
     except Exception as e:
+        print(f"JWT ERROR: {str(e)}")
         raise HTTPException(status_code=401, detail=f"Invalid session token: {str(e)}")
 
 def init_firebase():

@@ -1,7 +1,8 @@
 "use client"
-import * as React from "react"
+import { useEffect } from "react"
 import Link from "next/link"
 import { Menu } from "lucide-react"
+
 
 import {
   NavigationMenuItem,
@@ -9,18 +10,23 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@workspace/ui/components/navigation-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@workspace/ui/components/sheet"
-import { Button } from "@workspace/ui/components/button"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@workspace/ui/components/sheet"
+import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { NavigationMenu } from "@workspace/ui/components/navigation-menu"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { Button } from "@workspace/ui/components/button"
+import { useAppSelector } from "@/app/store/hooks"
 import { useRouter } from "next/navigation"
+import { UserData } from "@/app/types/user"
 
 export function Navbar() {
   const router = useRouter()
+  const user = useAppSelector((state) => state.user)
 
   return (
     <header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 flex items-center justify-center">
       <div className="h-16 flex items-center justify-between w-full max-w-[1200px]">
-    
+
         <Link href="/" className="flex items-center space-x-2 mr-10">
           <span className="font-bold inline-block">App</span>
         </Link>
@@ -28,29 +34,33 @@ export function Navbar() {
         <div className="hidden md:flex">
           <NavigationMenu>
             <NavigationMenuList>
-                <NavigationMenuItem>
+              <NavigationMenuItem>
                 <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                    <Link href="/editor">
-                    Редактор (Flow)
-                    </Link>
+                  <Link href="/editor">
+                    Editor (Flow)
+                  </Link>
                 </NavigationMenuLink>
-                </NavigationMenuItem>
+              </NavigationMenuItem>
 
-                <NavigationMenuItem>
+              <NavigationMenuItem>
                 <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                    <Link href="/dashboard">
-                    Дашборд
-                    </Link>
+                  <Link href="/dashboard">
+                    Dashboard
+                  </Link>
                 </NavigationMenuLink>
-                </NavigationMenuItem>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
 
         <div className="flex items-center space-x-4 ml-10">
-          <Button variant="outline" className="hidden sm:flex">Войти</Button>
-          <Button onClick={() => router.push('/auth')}>Начать</Button>
-
+          {user.loading ? (
+            <Skeleton className="h-8 w-8 rounded-full" />
+          ) : user.isLoggedIn ? (
+            <UserAvatar user={user} />
+          ) : (
+            <Button onClick={() => router.push('/auth')} className="w-20">Start</Button>
+          )}
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -59,9 +69,14 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Choose a section to navigate to
+                </SheetDescription>
+
                 <nav className="flex flex-col gap-4 mt-8">
-                  <Link href="/editor" className="text-lg font-medium">Редактор 11</Link>
-                  <Link href="/dashboard" className="text-lg font-medium">Дашборд 22</Link>
+                  <Link href="/editor" className="text-lg font-medium">Reduct 11</Link>
+                  <Link href="/dashboard" className="text-lg font-medium">Dashboard 22</Link>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -69,5 +84,15 @@ export function Navbar() {
         </div>
       </div>
     </header>
+  )
+}
+
+
+export function UserAvatar({ user }: { user: UserData }) {
+  return (
+    <Avatar>
+      <AvatarImage src={user.avatar || ""} alt={user.username || "User"} />
+      <AvatarFallback>{user.username}</AvatarFallback>
+    </Avatar>
   )
 }

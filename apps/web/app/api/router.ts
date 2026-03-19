@@ -18,9 +18,13 @@ export async function loginWithGoogle() {
             credentials: 'include'
         })
         if (!response.ok) throw new Error('Backend sync failed')
+        const data = await response.json()
         return {
-            uid: result.user.uid,
-            email: result.user.email
+            id: data.id,
+            firebase_uid: data.firebase_uid,
+            email: data.email,
+            username: data.username,
+            avatar: data.avatar,
         }
     } catch (error) {
         console.error("Login error:", error)
@@ -32,6 +36,19 @@ export async function logoutFromBackend() {
     try {
         const response = await fetch(`${BACKEND_URL}/auth/logout`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+        })
+        return await response.json()
+    } catch (error) {
+        return null
+    }
+}
+
+export async function getMe() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/auth/me`, {
+            method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
         })

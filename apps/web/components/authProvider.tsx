@@ -1,27 +1,27 @@
-'use client'
+"use client"
+import { useAppDispatch, useAppSelector } from '../app/store/hooks'
+import { setUser, setLoading } from '../app/store/userSlice'
+import { getMe } from '../app/api/router'
 import { useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/app/api/firebase'
-import { useAppDispatch } from '@/app/store/hooks'
-import { setUser, logout } from '@/app/store/userSlice'
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const dispatch = useAppDispatch()
-
+    const { isLoggedIn } = useAppSelector((state) => state.user)
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                dispatch(setUser({ 
-                    uid: user.uid, 
-                    email: user.email || "" 
-                }))
-            } else {
-                dispatch(logout())
+        if (!isLoggedIn) {
+            const fetchMe = async () => {
+                try {
+                    const data = await getMe()
+                    console.log(data)
+                    if (data && data.firebase_uid) dispatch(setUser(data))
+                } catch (e) {
+                    console.error("Not authorized")
+                } finally {
+                    dispatch(setLoading(false))
+                }
             }
-        })
-
-        return () => unsubscribe()
-    }, [dispatch])
-
+            fetchMe()
+        }
+    }, [isLoggedIn, dispatch])
     return <>{children}</>
 }
