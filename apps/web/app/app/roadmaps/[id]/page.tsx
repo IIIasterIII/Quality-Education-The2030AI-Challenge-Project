@@ -22,10 +22,22 @@ import '@xyflow/react/dist/style.css';
 import { useTheme } from 'next-themes';
 import { RoadmapNode } from '@/components/roadMapsComponents/RoadmapNode';
 import { Button } from '@workspace/ui/components/button';
-import { Plus, Save, Edit3, Eye, Trash2, Settings2, Undo2, Loader2, RefreshCcw } from 'lucide-react';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle 
+} from '@workspace/ui/components/alert-dialog';
+import { Plus, Save, Edit3, Eye, Trash2, Settings2, Undo2, Loader2, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Input } from '@workspace/ui/components/input';
 import { Textarea } from '@workspace/ui/components/textarea';
 import { saveChanges, getAllRoadmapData } from '@/app/api/roadmap';
+import { useToast } from '@/components/toast';
+
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
     animated: true,
@@ -45,20 +57,25 @@ type Snapshot = {
 };
 
 const getMissingAncestors = (nodeId: string, nodes: Node[], edges: Edge[], visited = new Set<string>()): Node[] => {
-    if (visited.has(nodeId)) return []
-    visited.add(nodeId)
-    const missingNodes: Node[] = []
-    const incomingEdges = edges.filter(edge => edge.target === nodeId)
-    incomingEdges.forEach(edge => {
-        const sourceNode = nodes.find(n => n.id === edge.source)
+    if (visited.has(nodeId)) return [];
+    visited.add(nodeId);
+    const missingNodes: Node[] = [];
+    const incomingEdges = edges.filter(edge => edge.target === nodeId);
+    for (const edge of incomingEdges) {
+        const sourceNode = nodes.find(n => n.id === edge.source);
         if (sourceNode) {
-            if (sourceNode.data?.isCompleted === false) missingNodes.push(sourceNode)
-            const furtherAncestors = getMissingAncestors(sourceNode.id, nodes, edges, visited)
-            furtherAncestors.forEach(anc => { if (!missingNodes.find(m => m.id === anc.id)) missingNodes.push(anc)})
+            if (!sourceNode.data?.isCompleted) {
+                if (!missingNodes.find(m => m.id === sourceNode.id)) missingNodes.push(sourceNode);
+            }
+            const furtherAncestors = getMissingAncestors(sourceNode.id, nodes, edges, visited);
+            for (const anc of furtherAncestors) {
+                if (!missingNodes.find(m => m.id === anc.id)) missingNodes.push(anc)
+            }
         }
-    })
+    }
     return missingNodes;
 };
+
 
 const getAllDescendantsIds = (nodeId: string, edges: Edge[], visited = new Set<string>()): string[] => {
     if (visited.has(nodeId)) return [];
@@ -84,21 +101,17 @@ const page = () => {
     const [edges, setEdges] = useState<Edge[]>([])
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isLoading, setIsLoading] = useState(true)
-    
     const [past, setPast] = useState<Snapshot[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [streamingText, setStreamingText] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
-
-
-
+    const [showConfirmReset, setShowConfirmReset] = useState(false);
+    const { showToast, ToastComponent } = useToast();
     const fetchedIdRef = useRef<string | null>(null)
-
     useEffect(() => { setMounted(true) }, [])
 
     useEffect(() => {
         if (!id || id === fetchedIdRef.current) return;
-        
         let active = true;
         const loadInitialData = async () => {
             setIsLoading(true);
@@ -115,7 +128,6 @@ const page = () => {
                 if (active) setIsLoading(false);
             }
         };
-
         loadInitialData();
         return () => { active = false; };
     }, [id]);
@@ -128,7 +140,6 @@ const page = () => {
             edges: JSON.parse(JSON.stringify(edges)) 
         }]);
     }, [nodes, edges]);
-
     const handleUndo = useCallback(() => {
         if (past.length === 0) return;
         const lastSnapshot = past[past.length - 1];
@@ -170,15 +181,13 @@ const page = () => {
             const missingNodes = getMissingAncestors(nodeId, nodes, edges);
             if (missingNodes.length > 0) {
                 const labels = missingNodes.map(n => n.data.label).join(", ");
-                alert(`You need to complete these steps first: ${labels}`);
+                showToast(`You need to complete these steps first: ${labels}`, "warning");
                 setPast(prev => prev.slice(0, -1));
                 return;
             }
         }
         let nodesToReset: string[] = [];
-        if (currentlyCompleted) {
-            nodesToReset = getAllDescendantsIds(nodeId, edges);
-        }
+        if (currentlyCompleted) nodesToReset = getAllDescendantsIds(nodeId, edges);
 
         setNodes((nds) =>
             nds.map((node) => {
@@ -246,26 +255,30 @@ const page = () => {
             if (data) {
                 setPast([]); 
                 setIsEditMode(false);
-                alert("Roadmap saved successfully!");
+                showToast("Roadmap saved successfully!", "success");
             }
         } catch (err) {
-            alert("Failed to save changes.");
+            showToast("Failed to save changes.", "error");
         } finally {
+
             setIsSaving(false);
         }
     };
 
     const discardChanges = () => {
-        if (confirm("Reset ALL unsaved changes?")) {
-            fetchedIdRef.current = null
-            window.location.reload(); 
-        }
+        setShowConfirmReset(true);
     };
+
+    const handleActualReset = () => {
+        fetchedIdRef.current = null;
+        window.location.reload(); 
+    };
+
 
     const handleGenerate = async () => {
         if (!topic) return;
-        setIsGenerating(true); // Assuming this state exists or needs to be added
-        setStreamingText("");
+        setIsGenerating(true)
+        setStreamingText("")
         takeSnapshot();
         try {
             await startStreaming(
@@ -285,8 +298,13 @@ const page = () => {
                                     if (!newNode.position) {
                                         newNode.position = { x: 500, y: (prev.length * 100) + 500 };
                                     }
+                                    if (!newNode.data) newNode.data = {};
+                                    if (newNode.data.isCompleted === undefined) {
+                                        newNode.data.isCompleted = false;
+                                    }
                                     nodeMap.set(newNode.id, newNode);
                                 });
+
                                 return Array.from(nodeMap.values());
                             });
                         }
@@ -312,15 +330,13 @@ const page = () => {
         }
     };
 
-
-
-
     if (!mounted) return null;
-
 
     return (
         <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background">
+            {ToastComponent}
             <ResizablePanel minSize={200} maxSize={350} defaultSize="15%">
+
                 <div className="flex h-full flex-col p-6 border-r bg-card/30 backdrop-blur-xl">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-xl font-black tracking-tighter uppercase text-primary/80">Navigator</h2>
@@ -461,14 +477,9 @@ const page = () => {
                             colorMode={resolvedTheme as 'light' | 'dark' | 'system'}
                             nodesDraggable={isEditMode}
                             nodesConnectable={isEditMode}
+                            fitView
                         >
                             <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={resolvedTheme === 'dark' ? '#333' : '#ccc'} />
-                            {isEditMode && (
-                                <div className="absolute top-6 left-6 z-10 p-3 bg-primary/10 border border-primary/20 backdrop-blur-md rounded-2xl flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Editing Active</span>
-                                </div>
-                            )}
                         </ReactFlow>
                     )}
                 </div>
@@ -557,7 +568,33 @@ const page = () => {
                     )}
                 </div>
             </ResizablePanel>
+
+            <AlertDialog open={showConfirmReset} onOpenChange={setShowConfirmReset}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center border border-rose-500/20">
+                                <AlertTriangle className="w-5 h-5 text-rose-500 animate-pulse" />
+                            </div>
+                            <AlertDialogTitle className="text-xl font-black uppercase tracking-tight">Wait! Reset changes?</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-sm font-medium opacity-70">
+                            This will permanently PERASE all current progress and unsaved modifications. This action cannot be undone. Are you absolutely sure?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-6">
+                        <AlertDialogCancel className="rounded-xl border-border/50 font-bold">Nevermind</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleActualReset}
+                            className="rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black shadow-xl shadow-rose-500/20"
+                        >
+                            YES, RESET EVERYTHING
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </ResizablePanelGroup>
+
     )
 }
 

@@ -42,8 +42,8 @@ export function AppNavbar() {
 
                             <NavigationMenuItem>
                                 <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                                    <Link href="/app/dashboard">
-                                        Dashboard
+                                    <Link href="/app/subjects">
+                                        Subjects
                                     </Link>
                                 </NavigationMenuLink>
                             </NavigationMenuItem>
