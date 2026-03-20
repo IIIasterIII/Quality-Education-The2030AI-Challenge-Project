@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import { useParams } from 'next/navigation'
 import { 
@@ -15,12 +15,16 @@ import {
     Connection,
     Background,
     BackgroundVariant,
-    MarkerType,
     DefaultEdgeOptions
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTheme } from 'next-themes';
 import { RoadmapNode } from '@/components/roadMapsComponents/RoadmapNode';
+import { Button } from '@workspace/ui/components/button';
+import { Plus, Save, Edit3, Eye, Trash2, Settings2, Undo2, Loader2, RefreshCcw } from 'lucide-react';
+import { Input } from '@workspace/ui/components/input';
+import { Textarea } from '@workspace/ui/components/textarea';
+import { saveChanges, getAllRoadmapData } from '@/app/api/roadmap';
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
     animated: true,
@@ -29,44 +33,15 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
         strokeWidth: 2,
     },
     markerEnd: {
-        type: MarkerType.ArrowClosed,
+        type: "arrow",
         color: '#71fd64ff',
     },
 };
 
-const INITIAL_NODES: Node[] = [
-    { 
-        id: 'n1', 
-        type: 'roadmap',
-        position: { x: 250, y: 100 }, 
-        data: { label: 'Programming basics', description: 'Learning basic syntax, conditions and loops.', isCompleted: false },
-    },
-    { 
-        id: 'n2', 
-        type: 'roadmap',
-        position: { x: 250, y: 400 }, 
-        data: { label: 'Algorithms', description: 'Complexity O(n), sorting and recursion.', isCompleted: false },
-    },
-    { 
-        id: 'n3', 
-        type: 'roadmap',
-        position: { x: 650, y: 600 }, 
-        data: { label: 'Databases', description: 'SQL, NoSQL and data normalization.', isCompleted: false },
-    },
-];
-
-const INITIAL_EDGES: Edge[] = [
-    { 
-        id: 'e1-2', 
-        source: 'n1', 
-        target: 'n2', 
-    },
-    { 
-        id: 'e2-3', 
-        source: 'n2', 
-        target: 'n3',
-    },
-];
+type Snapshot = {
+    nodes: Node[];
+    edges: Edge[];
+};
 
 const getMissingAncestors = (nodeId: string, nodes: Node[], edges: Edge[], visited = new Set<string>()): Node[] => {
     if (visited.has(nodeId)) return []
@@ -99,150 +74,384 @@ const getAllDescendantsIds = (nodeId: string, edges: Edge[], visited = new Set<s
 
 const page = () => {
     const params = useParams()
-    const id = params.id
+    const id = params.id as string
     const { resolvedTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
-    useEffect(() => { setMounted(true) }, [])
-    const [nodes, setNodes] = useState<Node[]>(INITIAL_NODES);
-    const [edges, setEdges] = useState<Edge[]>(INITIAL_EDGES);
+    const [isEditMode, setIsEditMode] = useState(false)
+    
+    const [nodes, setNodes] = useState<Node[]>([])
+    const [edges, setEdges] = useState<Edge[]>([])
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+    const [isLoading, setIsLoading] = useState(true)
+    
+    const [past, setPast] = useState<Snapshot[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const fetchedIdRef = useRef<string | null>(null)
+
+    useEffect(() => { setMounted(true) }, [])
+
+    useEffect(() => {
+        if (!id || id === fetchedIdRef.current) return;
+        
+        let active = true;
+        const loadInitialData = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getAllRoadmapData(id);
+                if (active && data) {
+                    setNodes(data.nodes || []);
+                    setEdges(data.edges || []);
+                    fetchedIdRef.current = id;
+                }
+            } catch (error) {
+                console.error("Failed to fetch roadmap:", error);
+            } finally {
+                if (active) setIsLoading(false);
+            }
+        };
+
+        loadInitialData();
+        return () => { active = false; };
+    }, [id]);
+
     const currentNode = selectedNode ? nodes.find(n => n.id === selectedNode.id) : null;
-    const onNodesChange: OnNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
-    const onEdgesChange: OnEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
-    const onConnect: OnConnect = useCallback((params: Connection) => { setEdges((eds) => addEdge({ ...params, animated: true }, eds)) }, []);
+    
+    const takeSnapshot = useCallback(() => {
+        setPast(prev => [...prev.slice(-30), { 
+            nodes: JSON.parse(JSON.stringify(nodes)), 
+            edges: JSON.parse(JSON.stringify(edges)) 
+        }]);
+    }, [nodes, edges]);
+
+    const handleUndo = useCallback(() => {
+        if (past.length === 0) return;
+        const lastSnapshot = past[past.length - 1];
+        if (lastSnapshot) {
+            setNodes(lastSnapshot.nodes);
+            setEdges(lastSnapshot.edges);
+            setPast(prev => prev.slice(0, -1));
+        }
+    }, [past]);
+
+    const onNodesChange: OnNodesChange = useCallback((changes) => {
+        setNodes((nds) => applyNodeChanges(changes, nds))
+    }, []);
+
+    const onNodeDragStart = useCallback(() => {
+        takeSnapshot();
+    }, [takeSnapshot]);
+
+    const onEdgesChange: OnEdgesChange = useCallback((changes) => {
+        setEdges((eds) => applyEdgeChanges(changes, eds))
+    }, []);
+
+    const onConnect: OnConnect = useCallback((params: Connection) => { 
+        if (!isEditMode) return;
+        takeSnapshot();
+        setEdges((eds) => addEdge({ ...params, animated: true }, eds)) 
+    }, [isEditMode, takeSnapshot]);
+
     const onNodeClick = useCallback((_: any, node: Node) => { setSelectedNode(node) }, []);
     const onPaneClick = useCallback(() => { setSelectedNode(null) }, []);
 
-const handleToggleComplete = useCallback((nodeId: string) => {
-    const nodeToToggle = nodes.find(n => n.id === nodeId);
-    if (!nodeToToggle) return;
-    const currentlyCompleted = nodeToToggle.data?.isCompleted;
-    if (!currentlyCompleted) {
-        const missingNodes = getMissingAncestors(nodeId, nodes, edges);
-        if (missingNodes.length > 0) {
-            const labels = missingNodes.map(n => n.data.label).join(", ");
-            alert(`You need to complete these steps first: ${labels}`);
-            return;
+    const handleToggleComplete = useCallback((nodeId: string) => {
+        const nodeToToggle = nodes.find(n => n.id === nodeId);
+        if (!nodeToToggle) return;
+        
+        takeSnapshot();
+        const currentlyCompleted = nodeToToggle.data?.isCompleted;
+        if (!currentlyCompleted) {
+            const missingNodes = getMissingAncestors(nodeId, nodes, edges);
+            if (missingNodes.length > 0) {
+                const labels = missingNodes.map(n => n.data.label).join(", ");
+                alert(`You need to complete these steps first: ${labels}`);
+                setPast(prev => prev.slice(0, -1));
+                return;
+            }
         }
-    }
-    let nodesToReset: string[] = [];
-    if (currentlyCompleted) {
-        nodesToReset = getAllDescendantsIds(nodeId, edges);
-    }
+        let nodesToReset: string[] = [];
+        if (currentlyCompleted) {
+            nodesToReset = getAllDescendantsIds(nodeId, edges);
+        }
 
-    setNodes((nds) =>
-        nds.map((node) => {
-            if (node.id === nodeId) {
-                return {
-                    ...node,
-                    data: { ...node.data, isCompleted: !currentlyCompleted },
-                };
-            }
-            if (nodesToReset.includes(node.id)) {
-                return {
-                    ...node,
-                    data: { ...node.data, isCompleted: false },
-                };
-            }
-            return node;
-        })
-    );
-}, [nodes, edges]);
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (node.id === nodeId) {
+                    return {
+                        ...node,
+                        data: { ...node.data, isCompleted: !currentlyCompleted },
+                    };
+                }
+                if (nodesToReset.includes(node.id)) {
+                    return {
+                        ...node,
+                        data: { ...node.data, isCompleted: false },
+                    };
+                }
+                return node;
+            })
+        );
+    }, [nodes, edges, takeSnapshot]);
 
-    if (!mounted) {
-        return (
-            <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background">
-                <ResizablePanel minSize={200} maxSize={300} defaultSize="10%" className="border-r" />
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize="90%" />
-            </ResizablePanelGroup>
-        )
-    }
+    const addNode = () => {
+        takeSnapshot();
+        const newNodeId = `node_${Date.now()}`;
+        const newNode: Node = {
+            id: newNodeId,
+            type: 'roadmap',
+            position: { x: 100, y: 100 },
+            data: { label: 'New Step', description: 'Enter description...', isCompleted: false }
+        };
+        setNodes((nds) => nds.concat(newNode));
+        setSelectedNode(newNode);
+    };
+
+    const deleteNode = () => {
+        if (!selectedNode) return;
+        takeSnapshot();
+        setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
+        setEdges((eds) => eds.filter((e) => e.source !== selectedNode.id && e.target !== selectedNode.id));
+        setSelectedNode(null);
+    };
+
+    const updateNodeData = (field: string, value: any) => {
+        if (!selectedNode) return;
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (node.id === selectedNode.id) {
+                    return {
+                        ...node,
+                        data: { ...node.data, [field]: value },
+                    };
+                }
+                return node;
+            })
+        );
+    };
+
+    const onEditFocus = () => takeSnapshot();
+
+    const saveToServer = async () => {
+        if (!id) return;
+        setIsSaving(true);
+        try {
+            console.log("SAVING TO BACKEND...");
+            const data = await saveChanges(id, nodes, edges);
+            if (data) {
+                setPast([]); 
+                setIsEditMode(false);
+                alert("Roadmap saved successfully!");
+            }
+        } catch (err) {
+            alert("Failed to save changes.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const discardChanges = () => {
+        if (confirm("Reset ALL unsaved changes?")) {
+            fetchedIdRef.current = null
+            window.location.reload(); 
+        }
+    };
+
+    if (!mounted) return null;
 
     return (
         <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background">
-            <ResizablePanel minSize={200} maxSize={300} defaultSize="10%">
-                <div className="flex h-screen flex-col p-6 border-r bg-card/30 backdrop-blur-xl">
-                    <h2 className="text-xl font-black tracking-tighter mb-6 uppercase text-primary/80">Navigator</h2>
-                    <div className="space-y-4">
-                        <div className="p-4 rounded-xl bg-secondary/50 border border-border/50">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">Roadmap View</p>
-                            <p className="text-sm font-mono truncate">Id: {id}</p>
+            <ResizablePanel minSize={200} maxSize={350} defaultSize="15%">
+                <div className="flex h-full flex-col p-6 border-r bg-card/30 backdrop-blur-xl">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-xl font-black tracking-tighter uppercase text-primary/80">Navigator</h2>
+                        <Settings2 className="w-5 h-5 text-muted-foreground opacity-50" />
+                    </div>
+
+                    <div className="space-y-5 flex-1 overflow-y-auto no-scrollbar pb-6">
+                        <div className="p-4 rounded-2xl bg-secondary/50 border border-border/50 shadow-inner">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 opacity-70">Current Roadmap</p>
+                            <p className="text-sm font-mono truncate text-primary/90">ID: {id}</p>
                         </div>
+
+                        <div className="space-y-3">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Display Mode</p>
+                            <div className="flex p-1 bg-secondary/40 rounded-xl border border-border/50">
+                                <button 
+                                    onClick={() => setIsEditMode(false)}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${!isEditMode ? 'bg-background shadow-md text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <Eye className="w-3.5 h-3.5" /> View
+                                </button>
+                                <button 
+                                    onClick={() => setIsEditMode(true)}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${isEditMode ? 'bg-background shadow-md text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    <Edit3 className="w-3.5 h-3.5" /> Edit
+                                </button>
+                            </div>
+                        </div>
+
+                        {isEditMode && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">History</p>
+                                    <Button variant="outline" size="sm" onClick={handleUndo} disabled={past.length === 0} className="w-full gap-2 rounded-xl border-primary/20">
+                                        <Undo2 className="w-4 h-4" /> Undo ({past.length})
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Canvas Actions</p>
+                                    <Button variant="outline" size="sm" onClick={addNode} className="w-full gap-2 rounded-xl border-dashed border-2">
+                                        <Plus className="w-4 h-4" /> Add Step
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={deleteNode} disabled={!selectedNode} className="w-full gap-2 rounded-xl text-destructive hover:bg-destructive/5">
+                                        <Trash2 className="w-4 h-4" /> Delete selected
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="pt-6 border-t border-border/50">
+                        {isEditMode ? (
+                            <div className="space-y-3">
+                                <Button onClick={saveToServer} disabled={isSaving} className="w-full gap-2 rounded-xl shadow-lg shadow-primary/20 font-extrabold py-6">
+                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    Save changes
+                                </Button>
+                                <Button variant="ghost" onClick={discardChanges} className="w-full text-[10px] font-bold py-2">Discard unsaved</Button>
+                            </div>
+                        ) : (
+                            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
+                                <p className="text-[10px] text-primary/70 font-bold flex items-center justify-center gap-2 uppercase">
+                                    <Eye className="w-3 h-3" /> View Only Mode
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </ResizablePanel>
             
             <ResizableHandle withHandle />
             
-            <ResizablePanel defaultSize="90%">
-                <div className="h-full w-full relative">
-                    <ReactFlow
-                        nodes={nodes}
-                        edges={edges}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
-                        onConnect={onConnect}
-                        onNodeClick={onNodeClick}
-                        onPaneClick={onPaneClick}
-                        nodeTypes={{ roadmap: RoadmapNode }}
-                        defaultEdgeOptions={defaultEdgeOptions}
-                        colorMode={resolvedTheme as 'light' | 'dark' | 'system'}
-                    >
-                        <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={resolvedTheme === 'dark' ? '#333' : '#ccc'} />
-                    </ReactFlow>
+            <ResizablePanel defaultSize="60%" className="h-screen">
+                <div className="h-full w-full relative bg-background/50">
+                    {isLoading ? (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
+                            <div className="relative">
+                                <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                                <RefreshCcw className="absolute inset-0 m-auto w-6 h-6 text-primary animate-pulse" />
+                            </div>
+                            <p className="mt-4 text-xs font-black uppercase tracking-[0.2em] text-primary/60 animate-pulse">Building Roadmap...</p>
+                        </div>
+                    ) : (
+                        <ReactFlow
+                            nodes={nodes}
+                            edges={edges}
+                            onNodesChange={onNodesChange}
+                            onEdgesChange={onEdgesChange}
+                            onConnect={onConnect}
+                            onNodeClick={onNodeClick}
+                            onPaneClick={onPaneClick}
+                            onNodeDragStart={onNodeDragStart}
+                            nodeTypes={{ roadmap: RoadmapNode }}
+                            defaultEdgeOptions={defaultEdgeOptions}
+                            colorMode={resolvedTheme as 'light' | 'dark' | 'system'}
+                            nodesDraggable={isEditMode}
+                            nodesConnectable={isEditMode}
+                        >
+                            <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={resolvedTheme === 'dark' ? '#333' : '#ccc'} />
+                            {isEditMode && (
+                                <div className="absolute top-6 left-6 z-10 p-3 bg-primary/10 border border-primary/20 backdrop-blur-md rounded-2xl flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Editing Active</span>
+                                </div>
+                            )}
+                        </ReactFlow>
+                    )}
                 </div>
             </ResizablePanel>
             
             <ResizableHandle withHandle />
             
             <ResizablePanel minSize={250} maxSize={450} defaultSize="25%">
-                <div className="flex h-full flex-col p-6 border-l bg-card/30 backdrop-blur-xl">
+                <div className="flex h-full flex-col p-6 border-l bg-card/30 backdrop-blur-xl shrink-0">
                     <h2 className="text-xl font-black tracking-tighter mb-6 uppercase text-primary/80">Information</h2>
                     
                     {currentNode ? (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <div className="space-y-2">
-                                <h3 className="text-2xl font-bold leading-tight tracking-tight">{currentNode.data.label as string}</h3>
-                                <div className="h-1.5 w-12 bg-primary rounded-full shadow-sm shadow-primary/50" />
-                            </div>
-                            
-                            <div className="p-5 rounded-2xl bg-secondary/50 border border-border/50 shadow-inner">
-                                <p className="text-sm text-foreground/80 leading-relaxed font-medium">
-                                    {currentNode.data.description as string || 'No description added for this block.'}
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="p-4 rounded-2xl bg-card border shadow-sm text-center">
-                                    <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mb-1">Status</p>
-                                    <p className={`text-xs font-bold ${currentNode.data.isCompleted ? 'text-green-500' : 'text-primary'}`}>
-                                        {currentNode.data.isCompleted ? 'Completed' : 'In Progress'}
-                                    </p>
+                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto no-scrollbar pb-6">
+                            {isEditMode ? (
+                                <div className="space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-muted-foreground uppercase px-1">Step Title</label>
+                                        <Input 
+                                            value={currentNode.data.label as string} 
+                                            onFocus={onEditFocus}
+                                            onChange={(e) => updateNodeData('label', e.target.value)}
+                                            className="rounded-xl border-primary/20 bg-background/50 focus-visible:ring-primary/30"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-muted-foreground uppercase px-1">Detailed Description</label>
+                                        <Textarea 
+                                            value={currentNode.data.description as string || ''} 
+                                            onFocus={onEditFocus}
+                                            onChange={(e) => updateNodeData('description', e.target.value)}
+                                            className="rounded-xl border-primary/20 bg-background/50 focus-visible:ring-primary/30 min-h-[160px] resize-none leading-relaxed"
+                                        />
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 text-xs space-y-2">
+                                        <p className="font-bold opacity-50 uppercase tracking-widest">Metadata</p>
+                                        <div className="flex justify-between"><span>Node ID:</span><span className="font-mono text-[10px]">{currentNode.id}</span></div>
+                                    </div>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-card border shadow-sm text-center">
-                                    <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mb-1">Priority</p>
-                                    <p className="text-xs font-bold">High</p>
-                                </div>
-                            </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-3">
+                                        <h3 className="text-2xl font-black leading-tight tracking-tight text-foreground">{currentNode.data.label as string}</h3>
+                                        <div className="h-1 w-12 bg-primary rounded-full" />
+                                    </div>
+                                    
+                                    <div className="p-5 rounded-2xl bg-secondary/30 border border-border/50 shadow-inner">
+                                        <p className="text-sm text-foreground/70 leading-relaxed italic">
+                                            {currentNode.data.description as string || 'No additional details provided.'}
+                                        </p>
+                                    </div>
 
-                            <button 
-                                onClick={() => handleToggleComplete(currentNode.id)}
-                                className={`w-full py-4 rounded-2xl font-bold text-sm shadow-xl transition-all active:scale-95 
-                                    ${currentNode.data.isCompleted 
-                                        ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' 
-                                        : 'bg-primary text-primary-foreground hover:brightness-110 shadow-primary/20'}`}
-                            >
-                                {currentNode.data.isCompleted ? 'Mark as Uncompleted' : 'Mark as Completed'}
-                            </button>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="p-4 rounded-2xl bg-card border shadow-sm text-center">
+                                            <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mb-1">Status</p>
+                                            <p className={`text-xs font-black uppercase ${currentNode.data.isCompleted ? 'text-green-500' : 'text-primary'}`}>
+                                                {currentNode.data.isCompleted ? 'Done' : 'Todo'}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-card border shadow-sm text-center">
+                                            <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mb-1">Complexity</p>
+                                            <p className="text-xs font-black uppercase text-foreground/50">Medium</p>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => handleToggleComplete(currentNode.id)}
+                                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 
+                                            ${currentNode.data.isCompleted 
+                                                ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' 
+                                                : 'bg-primary text-primary-foreground hover:brightness-110 shadow-primary/20'}`}
+                                    >
+                                        {currentNode.data.isCompleted ? 'Reset Step' : 'Confirm Completion'}
+                                    </button>
+                                </>
+                            )}
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-3xl opacity-40 grayscale">
-                            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4 shadow-lg">
-                                <span className="text-2xl">⚡</span>
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-10 border-2 border-dashed rounded-[2.5rem] opacity-30 grayscale saturate-0">
+                            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6 shadow-2xl">
+                                <span className="text-3xl">🧩</span>
                             </div>
-                            <p className="text-sm font-bold tracking-tight text-muted-foreground">
-                                Click on a block to open details
+                            <p className="text-sm font-black uppercase tracking-[0.15em] text-muted-foreground">
+                                Select a node to view properties
                             </p>
                         </div>
                     )}

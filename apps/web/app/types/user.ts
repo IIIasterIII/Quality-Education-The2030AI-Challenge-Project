@@ -21,8 +21,15 @@ export interface RoadMap {
     image_url: string
 }
 
+export interface NodeHandle {
+    id: string;
+    type: 'source' | 'target';
+    position: 'top' | 'bottom' | 'left' | 'right';
+}
+
 export interface NodeData { 
     label: string;
     description: string | null;
     isCompleted: boolean;
+    customHandles?: NodeHandle[];
 }

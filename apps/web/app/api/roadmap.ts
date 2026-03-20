@@ -33,3 +33,33 @@ export async function getRoadmaps(page: number = 1, limit: number = 10) {
         return null
     }
 }
+
+export async function saveChanges(roadmapId: string, nodes: any[], edges: any[]) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}/save`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ nodes, edges }),
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error saving changes", err)
+        return null
+    }
+}
+
+export async function getAllRoadmapData(roadmapId: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}/all`, {
+            method: "GET",
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error getting all roadmap data", err)
+        return null
+    }
+}
