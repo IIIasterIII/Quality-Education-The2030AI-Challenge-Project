@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Form
 from db.session import get_db
 from db.models import User, Profile
 from firebase_admin import auth
@@ -8,6 +8,7 @@ from jose import jwt
 from dotenv import load_dotenv
 from utils.utils import init_firebase, get_current_user
 from fastapi.responses import RedirectResponse
+from services.ai_service import generate_roadmap_content
 import os
 
 load_dotenv()
@@ -93,3 +94,20 @@ def logout(response: Response):
 @router.get("/me")
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+from pydantic import BaseModel
+from typing import Optional, List
+
+class GenerateRoadmapRequest(BaseModel):
+    topic: str
+    nodes: Optional[List[dict]] = None
+    edges: Optional[List[dict]] = None
+
+@router.post("/generate")
+async def generate_roadmap(request: GenerateRoadmapRequest):
+    content = await generate_roadmap_content(
+        topic=request.topic,
+        existing_nodes=request.nodes,
+        existing_edges=request.edges
+    )
+    return content

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth, googleProvider } from "./firebase"
 import { signInWithPopup } from "firebase/auth"
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export async function GET() {
     return NextResponse.json({ message: "Hello World" })

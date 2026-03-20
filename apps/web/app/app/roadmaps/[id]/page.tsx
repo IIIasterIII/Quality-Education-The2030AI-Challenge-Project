@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import { useParams } from 'next/navigation'
+import { startStreaming } from '@/components/roadMapsComponents/startStreaming'
 import { 
     ReactFlow, 
     applyNodeChanges, 
@@ -78,7 +79,7 @@ const page = () => {
     const { resolvedTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
     const [isEditMode, setIsEditMode] = useState(false)
-    
+    const [topic, setTopic] = useState("")
     const [nodes, setNodes] = useState<Node[]>([])
     const [edges, setEdges] = useState<Edge[]>([])
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -86,6 +87,10 @@ const page = () => {
     
     const [past, setPast] = useState<Snapshot[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [streamingText, setStreamingText] = useState("");
+    const [isGenerating, setIsGenerating] = useState(false);
+
+
 
     const fetchedIdRef = useRef<string | null>(null)
 
@@ -257,7 +262,61 @@ const page = () => {
         }
     };
 
+    const handleGenerate = async () => {
+        if (!topic) return;
+        setIsGenerating(true); // Assuming this state exists or needs to be added
+        setStreamingText("");
+        takeSnapshot();
+        try {
+            await startStreaming(
+                topic,
+                nodes,
+                edges,
+                (content: string) => setStreamingText(content),
+                (fullContent: string) => {
+                    console.log("FULL AI CONTENT:", fullContent);
+                    try {
+                        const parsed = JSON.parse(fullContent);
+                        console.log("PARSED AI JSON:", parsed);
+                        if (parsed.nodes) {
+                            setNodes((prev) => {
+                                const nodeMap = new Map(prev.map(n => [n.id, n]));
+                                parsed.nodes.forEach((newNode: Node) => {
+                                    if (!newNode.position) {
+                                        newNode.position = { x: 500, y: (prev.length * 100) + 500 };
+                                    }
+                                    nodeMap.set(newNode.id, newNode);
+                                });
+                                return Array.from(nodeMap.values());
+                            });
+                        }
+                        if (parsed.edges) {
+                            setEdges((prev) => {
+                                const edgeMap = new Map(prev.map(e => [e.id, e]));
+                                parsed.edges.forEach((newEdge: Edge) => {
+                                    edgeMap.set(newEdge.id, newEdge);
+                                });
+                                return Array.from(edgeMap.values());
+                            });
+                        }
+                        setStreamingText(""); 
+                    } catch (e) {
+                        console.error("Failed to parse AI response:", e);
+                    }
+                }
+            );
+        } catch (err) {
+            console.error("Streaming failed:", err);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+
+
+
     if (!mounted) return null;
+
 
     return (
         <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background">
@@ -273,6 +332,32 @@ const page = () => {
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 opacity-70">Current Roadmap</p>
                             <p className="text-sm font-mono truncate text-primary/90">ID: {id}</p>
                         </div>
+
+                        <div className='flex flex-col items-center gap-2 p-4 bg-secondary/30 rounded-2xl border border-border/50'>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest self-start px-1">AI Assistant</p>
+                            <Input
+                                placeholder="Topic (e.g. Python basics)"
+                                value={topic}
+                                onChange={(e) => setTopic(e.target.value)}
+                                className="rounded-xl bg-background/50 border-primary/10"
+                            />
+                            <Button 
+                                onClick={handleGenerate} 
+                                disabled={!topic || isGenerating}
+                                className="w-full gap-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 transition-all font-bold"
+                            >
+                                {isGenerating ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <RefreshCcw className={`w-4 h-4 ${streamingText ? 'animate-spin' : ''}`} />
+                                )}
+                                {isGenerating 
+                                    ? (streamingText ? 'Generating...' : 'Connecting...') 
+                                    : 'Generate with AI'}
+                            </Button>
+
+                        </div>
+
 
                         <div className="space-y-3">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Display Mode</p>
@@ -338,7 +423,22 @@ const page = () => {
             
             <ResizablePanel defaultSize="60%" className="h-screen">
                 <div className="h-full w-full relative bg-background/50">
+                    {streamingText && (
+                        <div className="absolute top-6 right-6 z-20 max-w-xs w-full p-4 bg-background/90 backdrop-blur-xl border border-primary/20 rounded-2xl shadow-2xl animate-in slide-in-from-top-4 duration-300">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[10px] font-black uppercase text-primary animate-pulse">AI Thinking...</span>
+                                <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                            </div>
+                            <div className="max-h-[150px] overflow-y-auto no-scrollbar">
+                                <p className="text-[9px] font-mono text-muted-foreground leading-tight whitespace-pre-wrap">
+                                    {streamingText}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {isLoading ? (
+
                         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
                             <div className="relative">
                                 <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
