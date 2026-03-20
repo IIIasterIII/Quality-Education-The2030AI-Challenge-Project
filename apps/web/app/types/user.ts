@@ -20,3 +20,9 @@ export interface RoadMap {
     description: string
     image_url: string
 }
+
+export interface NodeData { 
+    label: string;
+    description: string | null;
+    isCompleted: boolean;
+}
