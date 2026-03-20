@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from db.session import get_db
 from db.models import User, Profile
 from firebase_admin import auth
@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Response
 from jose import jwt
 from dotenv import load_dotenv
 from utils.utils import init_firebase, get_current_user
+from fastapi.responses import RedirectResponse
 import os
 
 load_dotenv()

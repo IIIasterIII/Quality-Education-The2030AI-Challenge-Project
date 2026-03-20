@@ -20,3 +20,16 @@ export async function createRoadmap(data: RoadMapCreateData) {
         return null
     }
 }
+
+export async function getRoadmaps(page: number = 1, limit: number = 10) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/?page=${page}&limit=${limit}`, {
+            method: "GET",
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error getting roadmaps", err)
+        return null
+    }
+}

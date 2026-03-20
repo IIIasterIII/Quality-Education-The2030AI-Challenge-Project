@@ -1,18 +1,18 @@
-import os
 from fastapi import UploadFile
 from uuid import uuid4
 import aioboto3
+import os
 
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_S3_DOMEN = os.getenv("AWS_S3_DOMEN", "").rstrip("/")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_BUCKET_NAME = os.getenv("AWS_BUCKET_NAME")
 AWS_REGION = os.getenv("AWS_REGION")
+session = aioboto3.Session()
 
 async def upload_file_to_s3(file: UploadFile, folder: str = "roadmaps") -> str:
-    file_extension = file.filename.split(".")[-1]
-    file_name = f"{folder}/{uuid4()}.{file_extension}"
-
-    session = aioboto3.Session()
+    file_ext = os.path.splitext(file.filename)[1] if file.filename else ".jpg"
+    file_key = f"{folder}/{uuid4()}{file_ext}"
     async with session.client(
         "s3",
         region_name=AWS_REGION,
@@ -22,8 +22,8 @@ async def upload_file_to_s3(file: UploadFile, folder: str = "roadmaps") -> str:
         file_content = await file.read()
         await s3.put_object(
             Bucket=AWS_BUCKET_NAME,
-            Key=file_name,
+            Key=file_key,
             Body=file_content,
             ContentType=file.content_type,
         )
-        return f"https://{AWS_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{file_name}"
+        return f"{AWS_S3_DOMEN}/{file_key}"

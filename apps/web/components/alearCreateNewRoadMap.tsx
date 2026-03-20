@@ -14,24 +14,30 @@ import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
 import PhotoSelector from "./photoSelector"
 import { createRoadmap } from "@/app/api/roadmap"
-import { RoadMapCreateData } from "@/app/types/user"
+import { RoadMapCreateData, RoadMap } from "@/app/types/user"
 
-export function AlertCreateNewRoadMap({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+export function AlertCreateNewRoadMap(
+    { open, setOpen, roadmaps, setRoadmaps } :
+        { open: boolean, setOpen: (open: boolean) => void, roadmaps: RoadMap[], setRoadmaps: (roadmaps: RoadMap[]) => void }) {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState<boolean>(false)
 
     const handleCreate = async () => {
         if (!title || !imageFile) return
         const roadMapData: RoadMapCreateData = { title, description, image: imageFile }
         try {
-            const data = await createRoadmap(roadMapData)
-            console.log(data)
-            setOpen(false)
-            resetForm()
+            setIsLoading(true)
+            const data = await createRoadmap(roadMapData)   
+            setRoadmaps([...roadmaps, data])
         } catch (error) {
             console.error(error)
+        } finally {
+            setIsLoading(false)
+            setOpen(false)
+            resetForm()
         }
     }
 
@@ -72,8 +78,8 @@ export function AlertCreateNewRoadMap({ open, setOpen }: { open: boolean, setOpe
 
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={resetForm}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleCreate} disabled={!title || !imageFile}>
-                        Create
+                    <AlertDialogAction onClick={handleCreate} className={`cursor-pointer ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`} disabled={!title || !imageFile || isLoading}>
+                        {isLoading ? "Creating..." : "Create"}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
