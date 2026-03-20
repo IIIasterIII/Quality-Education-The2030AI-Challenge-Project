@@ -1,11 +1,11 @@
-from db.models import User
-from fastapi import APIRouter, Depends, Form, File, UploadFile
+from db.models import User, RoadMap, NodeModel, EdgeModel
+from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException
 from dotenv import load_dotenv
 from utils.utils import get_current_user, get_db
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from utils.s3 import upload_file_to_s3
-from db.models import RoadMap
+from schemas.roadmap import SaveRoadmapRequest, RoadmapResponse
 
 load_dotenv()
 
@@ -31,7 +31,7 @@ async def create_roadmap(
     db.refresh(new_roadmap)
     return new_roadmap
 
-@router.get("/")
+@router.get("/", response_model=List[RoadmapResponse])
 async def pagination_roadmaps(
     page: int = 1, limit: int = 10,
     db: Session = Depends(get_db),
@@ -40,3 +40,80 @@ async def pagination_roadmaps(
     offset = (page - 1) * limit
     roadmaps = db.query(RoadMap).join(User).filter(User.id == current_user.id).offset(offset).limit(limit).all()
     return roadmaps
+
+@router.get("/{id}", response_model=RoadmapResponse)
+async def get_roadmap(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    roadmap = db.query(RoadMap).filter(RoadMap.id == id).first()
+    if not roadmap:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    if roadmap.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to view this roadmap")
+    return roadmap
+
+@router.get("/{id}/all")
+async def get_all_roadmap_data(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    roadmap = db.query(RoadMap).filter(RoadMap.id == id).first()
+    if not roadmap:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    if current_user.id != roadmap.user_id:
+        raise HTTPException(status_code=403, detail="You are not authorized to view this roadmap")
+    nodes = db.query(NodeModel).filter(NodeModel.roadmap_id == id).all()
+    edges = db.query(EdgeModel).filter(EdgeModel.roadmap_id == id).all()
+    return {"nodes": nodes, "edges": edges}
+
+@router.post("/{id}/save")
+async def save_roadmap(
+    id: int,
+    request: SaveRoadmapRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    roadmap = db.query(RoadMap).filter(RoadMap.id == id).first()
+    if not roadmap:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    
+    if roadmap.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to edit this roadmap")
+
+    try:
+        db.query(NodeModel).filter(NodeModel.roadmap_id == id).delete()
+        db.query(EdgeModel).filter(EdgeModel.roadmap_id == id).delete()
+        db.flush() 
+
+        for node in request.nodes:
+            new_node = NodeModel(
+                id=node.id,
+                roadmap_id=id,
+                type=node.type,
+                position=node.position,
+                data=node.data
+            )
+            db.add(new_node)
+        
+        for edge in request.edges:
+            new_edge = EdgeModel(
+                id=edge.id,
+                roadmap_id=id,
+                source=edge.source,
+                target=edge.target,
+                sourceHandle=edge.sourceHandle,
+                targetHandle=edge.targetHandle
+            )
+            db.add(new_edge)
+        
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving roadmap: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save roadmap: {str(e)}")
+
+    db.refresh(roadmap)
+    return {"message": "Roadmap saved successfully", "id": roadmap.id}

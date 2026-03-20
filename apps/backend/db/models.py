@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, JSON, Text, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -21,12 +21,40 @@ class Profile(Base):
     saved = Column(Boolean, default=False)
     user = relationship("User", back_populates="profile")    
 
+style_default = {"stroke": "#71fd64ff", "strokeWidth": 2}
+marker_default = {"type": "arrow", "color": "#71fd64ff"}
+
 class RoadMap(Base):
     __tablename__ = 'roadmaps'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     description = Column(String(255), nullable=True)
     image_url = Column(String(255), nullable=True)
+    animated = Column(Boolean, default=True)
+    style = Column(JSON, default=style_default)
+    markerEndStyle = Column(JSON, default=marker_default)
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     user = relationship("User", back_populates="roadmaps")
-    
+    nodes = relationship("NodeModel", back_populates="roadmap", cascade="all, delete-orphan")
+    edges = relationship("EdgeModel", back_populates="roadmap", cascade="all, delete-orphan")
+
+position_default = {"x": 200, "y": 200}
+
+class NodeModel(Base):
+    __tablename__ = "nodes"
+    id = Column(String(255), primary_key=True)
+    roadmap_id = Column(Integer, ForeignKey("roadmaps.id", ondelete="CASCADE"), primary_key=True)
+    type = Column(String(50))
+    position = Column(JSON, default=position_default)
+    data = Column(JSON)
+    roadmap = relationship("RoadMap", back_populates="nodes")
+
+class EdgeModel(Base):
+    __tablename__ = "edges"
+    id = Column(String(255), primary_key=True)
+    roadmap_id = Column(Integer, ForeignKey("roadmaps.id", ondelete="CASCADE"), primary_key=True)
+    source = Column(String(255))
+    target = Column(String(255))
+    sourceHandle = Column(String(255), nullable=True)
+    targetHandle = Column(String(255), nullable=True)
+    roadmap = relationship("RoadMap", back_populates="edges")
