@@ -42,6 +42,14 @@ export function AppNavbar() {
 
                             <NavigationMenuItem>
                                 <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                                    <Link href="/app/graph">
+                                        Graph
+                                    </Link>
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+
+                            <NavigationMenuItem>
+                                <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
                                     <Link href="/app/subjects">
                                         Subjects
                                     </Link>

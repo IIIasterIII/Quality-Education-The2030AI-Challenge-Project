@@ -14,9 +14,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
+import { useRouter } from "next/navigation"
 
 export function AuthPanel() {
   const dispatch = useAppDispatch()
+  const router = useRouter()
 
   const handleGoogleLogin = async () => {
     const userData = await loginWithGoogle()
@@ -30,6 +32,7 @@ export function AuthPanel() {
           avatar: userData.avatar
         }
       ))
+      router.push(`/app/profiles/${userData.firebase_uid}`)
     }
   }
 
