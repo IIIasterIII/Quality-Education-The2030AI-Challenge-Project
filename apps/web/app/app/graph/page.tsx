@@ -4,8 +4,6 @@ import { ChevronRight } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { useToast } from '@/components/toast'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
-import { SubjectHeader } from '@/components/graph/SubjectHeader'
-import { GraphEditor } from '@/components/graph/GraphEditor'
 import { KnowledgeGraph } from '@/components/graph/KnowledgeGraph'
 import { SubjectDetails } from '@/components/graph/SubjectDetails'
 import { SubjectDirectory } from '@/components/graph/SubjectDirectory'
@@ -141,7 +139,6 @@ const Page = () => {
     const graphRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-    const [isEditorOpen, setIsEditorOpen] = useState(true);
     const [newLinkSource, setNewLinkSource] = useState("");
     const [newLinkTarget, setNewLinkTarget] = useState("");
     useEffect(() => { setMounted(true); }, []);
@@ -254,37 +251,7 @@ const Page = () => {
     return (
         <div className="h-screen w-full bg-background overflow-hidden flex flex-col">
             {ToastComponent}
-            
-            <SubjectHeader 
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                totalNodes={currentData.nodes.length}
-                isEditorOpen={isEditorOpen}
-                setIsEditorOpen={setIsEditorOpen}
-            />
-
             <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
-                {isEditorOpen && (
-                    <>
-                        <ResizablePanel maxSize={500} minSize={300} defaultSize={300} className="relative overflow-hidden shrink-0">
-                            <GraphEditor 
-                                selectedNode={selectedNode}
-                                currentData={currentData}
-                                groupColors={groupColors}
-                                addNode={addNode}
-                                removeNode={removeNode}
-                                updateNode={updateNode}
-                                addLink={addLink}
-                                newLinkSource={newLinkSource}
-                                setNewLinkSource={setNewLinkSource}
-                                newLinkTarget={newLinkTarget}
-                                setNewLinkTarget={setNewLinkTarget}
-                            />
-                        </ResizablePanel>
-                        <ResizableHandle withHandle className="bg-border/20" />
-                    </>
-                )}
-
                 <ResizablePanel className="relative overflow-hidden">
                     <div ref={containerRef} className="h-full w-full bg-[#0a0a0a] relative overflow-hidden">
                         <GraphLegend groupColors={groupColors} />

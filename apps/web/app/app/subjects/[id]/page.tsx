@@ -1,36 +1,33 @@
 "use client"
-import React, { useState, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
-import { Textarea } from "@workspace/ui/components/textarea"
-import { 
-    Plus, 
-    ArrowLeft, 
-    ChevronRight, 
-    Hash, 
-    Sparkles, 
-    Save, 
-    Share2, 
-    FileText,
-    GitBranch,
-    Settings,
-    Layers,
-    Binary
-} from "lucide-react"
+import { useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import Highlight from '@tiptap/extension-highlight'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import BubbleMenuExtension from '@tiptap/extension-bubble-menu'
+import FloatingMenuExtension from '@tiptap/extension-floating-menu'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
+import { TextStyle } from '@tiptap/extension-text-style'
+import { Color } from '@tiptap/extension-color'
 
-interface SubNode {
-    id: string;
-    title: string;
-}
+import { KnowledgeSidebar } from "@/components/knowledge-node/KnowledgeSidebar"
+import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
+import { RichEditor } from "@/components/knowledge-node/RichEditor"
+import { SubNode } from "@/components/knowledge-node/types"
+import { Mark, mergeAttributes } from '@tiptap/core'
+import { Anchor as AnchorIcon } from "lucide-react"
 
-const page = () => {
+const SubjectNodePage = () => {
     const params = useParams()
-    const router = useRouter()
     const id = params.id as string
 
-    const [title, setTitle] = useState("Mathematics")
-    const [mainNote, setMainNote] = useState("")
+    /* --- Nodes State --- */
     const [subNodes, setSubNodes] = useState<SubNode[]>([
         { id: '101', title: 'Algebra' },
         { id: '102', title: 'Calculus' },
@@ -38,179 +35,298 @@ const page = () => {
     ])
     const [newSubTitle, setNewSubTitle] = useState("")
     const [isAddingSub, setIsAddingSub] = useState(false)
+    
+    /* --- Wizard State --- */
+    const [wizardOpen, setWizardOpen] = useState(false)
+    const [imgUrl, setImgUrl] = useState("")
+    const [imgRotation, setImgRotation] = useState(0)
+    const [imgScale, setImgScale] = useState(1)
+    const [imgAlign, setImgAlign] = useState<'left' | 'center' | 'right'>('center')
+    const [localSliderScale, setLocalSliderScale] = useState(1)
+    
+    /* --- Anchors State --- */
+    const [anchors, setAnchors] = useState<{ id: string, text: string }[]>([])
+
+    /* --- File Handling --- */
+    const handleFile = (file: File) => {
+        if (!file.type.startsWith('image/')) return
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            const result = e.target?.result as string
+            setImgUrl(result)
+            setWizardOpen(true)
+        }
+        reader.readAsDataURL(file)
+    }
+
+    /* --- Extension: Anchor --- */
+    const Anchor = Mark.create({
+        name: 'anchor',
+        addAttributes() {
+            return {
+                id: { default: null },
+            }
+        },
+        parseHTML() { return [{ tag: 'span[data-anchor-id]' }] },
+        renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
+            return ['span', mergeAttributes(HTMLAttributes, { 'data-anchor-id': HTMLAttributes.id, class: 'bg-primary/20 border-b-2 border-primary/50' }), 0]
+        },
+    })
+
+    /* --- Editor Instance --- */
+    const editor = useEditor({
+        immediatelyRender: false,
+        extensions: [
+            StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+            Image.extend({
+                addAttributes() {
+                    return {
+                        ...this.parent?.(),
+                        style: {
+                            default: '',
+                            renderHTML: attributes => ({ style: attributes.style }),
+                        },
+                    }
+                },
+            }).configure({ inline: true, allowBase64: true }),
+            Link.configure({ openOnClick: false }),
+            Placeholder.configure({
+                placeholder: 'Start writing your knowledge... Type # for headers, - for lists.',
+            }),
+            Highlight,
+            TaskList,
+            TaskItem.configure({ nested: true }),
+            BubbleMenuExtension,
+            FloatingMenuExtension,
+            Underline,
+            TextAlign.configure({ types: ['heading', 'paragraph'] }),
+            TextStyle,
+            Color,
+            Anchor
+        ],
+        onUpdate: ({ editor }) => {
+            const seen = new Set<string>()
+            const uniqueAnchors: { id: string, text: string }[] = []
+            
+            editor.state.doc.descendants((node) => {
+                node.marks.forEach(mark => {
+                    if (mark.type.name === 'anchor' && !seen.has(mark.attrs.id)) {
+                        seen.add(mark.attrs.id)
+                        uniqueAnchors.push({ id: mark.attrs.id, text: node.textContent || 'Anchor' })
+                    }
+                })
+            })
+            setAnchors(uniqueAnchors)
+        },
+        content: `<h1>Brain Node: ${id}</h1><p>Capture your thoughts with real-time Markdown conversion. Type # followed by a space to create a heading, or - for a list entry.</p>`,
+        editorProps: {
+            attributes: {
+                class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed selection:bg-primary/20',
+            },
+            handleDrop: (view, event) => {
+                if (event.dataTransfer?.files?.[0]) {
+                    handleFile(event.dataTransfer.files[0])
+                    return true 
+                }
+                return false
+            },
+            handlePaste: (view, event) => {
+                if (event.clipboardData?.files?.[0]) {
+                    handleFile(event.clipboardData.files[0])
+                    return true
+                }
+                return false
+            },
+            handleDOMEvents: {
+                dblclick: (view, event) => {
+                    const target = event.target as HTMLElement
+                    if (target.tagName === 'IMG') {
+                        setTimeout(() => editImageByNode(), 10)
+                        return true
+                    }
+                    return false
+                }
+            }
+        },
+    })
+
+    /* --- Business Logic --- */
+    const handleInsertImageFinal = () => {
+        if (!imgUrl) return
+        const layoutStyle = imgAlign === 'left' ? 'float: left; margin-right: 2rem; margin-bottom: 1.5rem; display: inline-block;' : 
+                            imgAlign === 'right' ? 'float: right; margin-left: 2rem; margin-bottom: 1.5rem; display: inline-block;' : 
+                            'display: block; margin-left: auto; margin-right: auto; float: none; margin-bottom: 2rem;'
+                            
+        const widthVal = (imgScale * 100).toFixed(0)
+        const transitionStyle = 'transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);'
+        const style = `${layoutStyle} width: ${widthVal}%; transform: rotate(${imgRotation}deg); border-radius: 12px; max-width: 100%; ${transitionStyle}`
+        
+        if (editor?.isActive('image')) {
+            editor.chain().focus().updateAttributes('image', { src: imgUrl, style }).run()
+        } else {
+            editor?.chain().focus().setImage({ src: imgUrl, style } as any).run()
+        }
+        
+        setImgUrl("")
+        setImgRotation(0)
+        setImgScale(1)
+        setImgAlign('center')
+        setWizardOpen(false)
+    }
+
+    const editImageByNode = useCallback(() => {
+        if (!editor) return
+        const { src, style } = editor.getAttributes('image')
+        if (!src) return
+
+        setImgUrl(src)
+        const rotateMatch = style?.match(/rotate\((-?\d+)deg\)/)
+        const widthMatch = style?.match(/width: ([\d.]+)%/)
+        
+        const align = style?.includes('float: left;') ? 'left' :
+                     style?.includes('float: right;') ? 'right' : 
+                     'center'
+
+        setImgRotation(rotateMatch ? parseInt(rotateMatch[1]) : 0)
+        setImgScale(widthMatch ? parseFloat(widthMatch[1]) / 100 : 1)
+        setLocalSliderScale(widthMatch ? parseFloat(widthMatch[1]) / 100 : 1)
+        setImgAlign(align)
+        setWizardOpen(true)
+    }, [editor])
+
+    const setAnchor = useCallback(() => {
+        if (!editor) return
+        const anchorName = window.prompt("Bookmark Name:")
+        if (!anchorName) return
+        const id = `anchor-${Date.now()}`
+        editor.chain().focus().setMark('anchor', { id }).run()
+    }, [editor])
+
+    const scrollToAnchor = (id: string) => {
+        const el = document.querySelector(`[data-anchor-id="${id}"]`)
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            // Highlight it briefly
+            el.classList.add('ring-4', 'ring-primary', 'transition-all', 'duration-500')
+            setTimeout(() => el.classList.remove('ring-4', 'ring-primary'), 1000)
+        }
+    }
+
+    const updateImageStyle = useCallback((options: { rotateOffset?: number, scale?: number, align?: 'left'|'center'|'right' }) => {
+        if (!editor) return
+        const { style } = editor.getAttributes('image')
+        
+        const rotateMatch = style?.match(/rotate\((-?\d+)deg\)/)
+        const widthMatch = style?.match(/width: ([\d.]+)%/)
+        
+        let currentRotate = rotateMatch ? parseInt(rotateMatch[1]) : 0
+        let currentWidth = widthMatch ? parseFloat(widthMatch[1]) : 100
+        
+        const newRotate = options.rotateOffset !== undefined ? (currentRotate + options.rotateOffset) % 360 : currentRotate
+        const newWidth = options.scale !== undefined ? (options.scale * 100).toFixed(0) : currentWidth
+        const newAlign = options.align !== undefined ? options.align : (style?.includes('float: left;') ? 'left' : style?.includes('float: right;') ? 'right' : 'center')
+
+        const layoutStyle = newAlign === 'left' ? 'float: left; margin-right: 2rem; margin-bottom: 1.5rem; display: inline-block;' : 
+                            newAlign === 'right' ? 'float: right; margin-left: 2rem; margin-bottom: 1.5rem; display: inline-block;' : 
+                            'display: block; margin-left: auto; margin-right: auto; float: none; margin-bottom: 2rem;'
+                            
+        const transitionStyle = 'transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);'
+        const newStyle = `${layoutStyle} width: ${newWidth}%; transform: rotate(${newRotate}deg); border-radius: 12px; max-width: 100%; ${transitionStyle}`
+        editor.chain().focus().updateAttributes('image', { style: newStyle }).run()
+    }, [editor])
 
     const handleAddSubNode = () => {
         if (!newSubTitle) return
-        const newNode = {
-            id: Date.now().toString(),
-            title: newSubTitle
-        }
+        const newNode = { id: Date.now().toString(), title: newSubTitle }
         setSubNodes([...subNodes, newNode])
         setNewSubTitle("")
         setIsAddingSub(false)
     }
 
     return (
-        <div className="min-h-screen bg-[#050505] text-zinc-100 flex flex-col">
-            
-            {/* Toolbar / Header */}
-            <div className="h-16 border-b border-zinc-800/50 bg-[#080808]/80 backdrop-blur-xl px-6 flex items-center justify-between sticky top-0 z-30">
-                <div className="flex items-center gap-4">
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => router.push('/app/subjects')}
-                        className="text-zinc-500 hover:text-zinc-200"
-                    >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back
-                    </Button>
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-600">
-                        <span>Subjects</span>
-                        <ChevronRight className="w-3 h-3" />
-                        <span className="text-primary/70">{title}</span>
-                    </div>
-                </div>
+        <div className="flex h-screen bg-[#050505] text-zinc-300 overflow-hidden font-sans">
+            <KnowledgeSidebar 
+                subNodes={subNodes}
+                isAddingSub={isAddingSub}
+                newSubTitle={newSubTitle}
+                setIsAddingSub={setIsAddingSub}
+                setNewSubTitle={setNewSubTitle}
+                handleAddSubNode={handleAddSubNode}
+            />
 
-                <div className="flex items-center gap-3">
-                    <div className="flex -space-x-2 mr-4 opacity-50">
-                        {[1, 2, 3].map(i => (
-                            <div key={i} className="w-6 h-6 rounded-full border-2 border-[#050505] bg-zinc-800 flex items-center justify-center text-[8px] font-bold">
-                                {String.fromCharCode(64 + i)}
-                            </div>
-                        ))}
-                    </div>
-                    <Button variant="outline" size="sm" className="h-8 border-zinc-800 bg-zinc-900/50 text-xs gap-2">
-                        <Share2 className="w-3.5 h-3.5" />
-                        Sync
-                    </Button>
-                    <Button size="sm" className="h-8 px-4 bg-primary text-white text-xs font-bold gap-2">
-                        <Save className="w-3.5 h-3.5" />
-                        Save Node
-                    </Button>
-                    <button className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-500 transition-colors">
-                        <Settings className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full py-12 px-8">
+            <main className="flex-1 flex bg-[#050505] overflow-hidden relative">
                 
-                {/* Subject Title & Metadata */}
-                <header className="mb-12 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-[10px] font-black tracking-widest text-zinc-500 uppercase">
-                        <Binary className="w-3 h-3 text-primary/60" />
-                        Subject Root Node :: {id}
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-5xl font-black tracking-tighter text-zinc-100 italic">{title}</h1>
-                        <div className="flex gap-4">
-                            <div className="flex flex-col items-end">
-                                <span className="text-[10px] font-black uppercase text-zinc-600 tracking-widest">Connectivity</span>
-                                <span className="text-xl font-black text-emerald-500">High</span>
+                {/* Anchor Rail (Left side of main area) */}
+                {anchors.length > 0 && (
+                    <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">
+                        <div className="flex flex-col items-center group-hover:items-start px-3 gap-6">
+                            <div className="flex items-center gap-3 px-1 text-zinc-600">
+                                <AnchorIcon className="w-5 h-5 shrink-0" />
+                                <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:block whitespace-nowrap">Bookmarks</span>
+                            </div>
+                            
+                            <div className="flex flex-col gap-2 w-full">
+                                {anchors.map((anchor) => (
+                                    <button 
+                                        key={anchor.id}
+                                        onClick={() => scrollToAnchor(anchor.id)}
+                                        className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-zinc-900 text-zinc-600 hover:text-primary transition-all overflow-hidden"
+                                    >
+                                        <div className="w-2 h-2 rounded-full bg-zinc-800 shrink-0 group-hover:bg-primary/40" />
+                                        <span className="text-[10px] font-bold truncate hidden group-hover:block">{anchor.text}</span>
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    </div>
-                </header>
+                    </aside>
+                )}
 
-                {/* SUB-NOTES ZONE (The Nesting Area) */}
-                <div className="mb-16 space-y-6">
-                    <div className="flex items-center justify-between border-b border-zinc-800/50 pb-3">
-                        <div className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.2em] text-zinc-500">
-                            <Layers className="w-3.5 h-3.5 text-primary" />
-                            Nested Sub-Nodes / Blocks
-                        </div>
-                        <span className="text-[10px] font-bold text-zinc-600 px-3 py-1 rounded-full bg-zinc-900/50">
-                            {subNodes.length} Elements
-                        </span>
-                    </div>
+                <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide pt-12 pb-24 px-10">
+                    <RichEditor 
+                        editor={editor}
+                        openWizard={() => setWizardOpen(true)}
+                        editImageByNode={editImageByNode}
+                        updateImageStyle={updateImageStyle}
+                        localSliderScale={localSliderScale}
+                        setLocalSliderScale={setLocalSliderScale}
+                        setAnchor={setAnchor}
+                    />
 
-                    <div className="flex flex-wrap gap-4">
-                        {subNodes.map((node) => (
-                            <button 
-                                key={node.id}
-                                onClick={() => router.push(`/app/subjects/${node.id}`)}
-                                className="group relative p-4 pr-10 rounded-2xl bg-zinc-900/40 border border-zinc-800 hover:border-primary/50 hover:bg-zinc-900/60 transition-all flex flex-col gap-1 min-w-[140px]"
-                            >
-                                <Hash className="w-3 h-3 text-zinc-700 absolute top-4 right-4 group-hover:text-primary transition-colors" />
-                                <span className="text-xs font-black uppercase tracking-widest text-zinc-600 group-hover:text-zinc-500">Node</span>
-                                <span className="text-sm font-bold text-zinc-300 group-hover:text-zinc-100">{node.title}</span>
-                            </button>
-                        ))}
-
-                        {isAddingSub ? (
-                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                                <Input 
-                                    placeholder="Enter block title..." 
-                                    className="h-10 w-48 bg-zinc-900/50 border-primary/30 rounded-xl text-xs"
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') handleAddSubNode()
-                                        if (e.key === 'Escape') setIsAddingSub(false)
-                                    }}
-                                    value={newSubTitle}
-                                    onChange={(e) => setNewSubTitle(e.target.value)}
-                                />
-                                <Button onClick={handleAddSubNode} size="sm" className="h-10 rounded-xl px-4 bg-primary text-white">Add</Button>
-                                <Button onClick={() => setIsAddingSub(false)} variant="ghost" size="sm" className="h-10 rounded-xl">Cancel</Button>
-                            </div>
-                        ) : (
-                            <button 
-                                onClick={() => setIsAddingSub(true)}
-                                className="p-4 rounded-2xl border-2 border-dashed border-zinc-800 hover:border-primary/30 hover:bg-primary/5 transition-all flex flex-col items-center justify-center gap-1 min-w-[140px] opacity-60 hover:opacity-100"
-                            >
-                                <Plus className="w-5 h-5 text-zinc-600" />
-                                <span className="text-[10px] font-black uppercase text-zinc-600">Split Block</span>
-                            </button>
-                        )}
-                    </div>
+                    <ImageWizard 
+                        isOpen={wizardOpen}
+                        onClose={() => setWizardOpen(false)}
+                        imgUrl={imgUrl}
+                        setImgUrl={setImgUrl}
+                        imgRotation={imgRotation}
+                        setImgRotation={setImgRotation}
+                        imgScale={imgScale}
+                        setImgScale={setImgScale}
+                        imgAlign={imgAlign}
+                        setImgAlign={setImgAlign}
+                        handleFile={handleFile}
+                        handleInsert={handleInsertImageFinal}
+                    />
                 </div>
 
-                {/* MAIN EDITOR AREA */}
-                <div className="flex-1 flex flex-col space-y-4">
-                    <div className="flex items-center gap-3 text-xs font-black uppercase tracking-[0.2em] text-zinc-500 mb-2">
-                        <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                        Main Note Content
-                    </div>
-                    
-                    <div className="relative flex-1 group">
-                        {/* Background glowing accent */}
-                        <div className="absolute inset-0 bg-primary/2 rounded-[2.5rem] blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                        
-                        <Textarea 
-                            placeholder="Start decomposing your thoughts here... Use # to create graph nodes manually or just write markdown."
-                            className="flex-1 w-full min-h-[500px] p-10 bg-zinc-900/20 border-zinc-800/50 rounded-[2.5rem] text-zinc-300 text-lg leading-relaxed focus-visible:ring-primary/20 focus-visible:border-primary/30 backdrop-blur-sm transition-all shadow-inner"
-                            value={mainNote}
-                            onChange={(e) => setMainNote(e.target.value)}
-                        />
-                        
-                        <div className="absolute bottom-6 right-8 flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-zinc-600 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                            <span className="flex items-center gap-1 text-primary/60"><Sparkles className="w-3 h-3" /> AI Analysis Ready</span>
-                            <span>{mainNote.split(/\s+/).filter(Boolean).length} Words</span>
-                            <span>{mainNote.length} Characters</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer Insight bar */}
-                <div className="mt-12 flex items-center justify-between p-6 rounded-3xl bg-zinc-900/30 border border-zinc-800/50">
-                    <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-xl bg-orange-500/10 text-orange-500">
-                            <GitBranch className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold text-zinc-300">Graph Linkage</p>
-                            <p className="text-[10px] text-zinc-600 uppercase font-black">This note is a root for 12 other entities</p>
-                        </div>
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-xs text-zinc-500 hover:text-primary">
-                        View Connectivity Map
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                </div>
-            </div>
+                <style jsx global>{`
+                    @keyframes scale-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+                    .scale-in-center { animation: scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+                    .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; color: #27272a; pointer-events: none; height: 0; }
+                    .ProseMirror h1 { font-family: italic; font-weight: 900; font-size: 4rem; color: #fff; margin-bottom: 2rem; margin-top: 3rem; }
+                    .ProseMirror h2 { font-style: italic; font-weight: 800; font-size: 2.8rem; color: #f4f4f5; margin-bottom: 1.5rem; margin-top: 3rem; border-bottom: 1px solid #18181b; padding-bottom: 1rem; }
+                    .ProseMirror blockquote { border-left: 3px solid #3b82f6; padding-left: 1.5rem; color: #71717a; font-style: italic; }
+                    .ProseMirror img { cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+                    .ProseMirror a { color: #3b82f6; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+                    .ProseMirror a:hover { color: #93c5fd; text-decoration-thickness: 2px; }
+                    .ProseMirror ul { list-style-type: disc; padding-left: 2rem; margin: 1.5rem 0; }
+                    .ProseMirror ol { list-style-type: decimal; padding-left: 2rem; margin: 1.5rem 0; }
+                    .ProseMirror li { margin: 0.5rem 0; }
+                    .ProseMirror li::marker { color: #3b82f6; font-weight: 900; }
+                    .ProseMirror li p { margin: 0; }
+                `}</style>
+            </main>
         </div>
     )
 }
 
-export default page
+export default SubjectNodePage
