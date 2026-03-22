@@ -1,20 +1,14 @@
 "use client"
-import Link from "next/link"
-import { Menu } from "lucide-react"
-import {
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@workspace/ui/components/navigation-menu"
+import { NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "@workspace/ui/components/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@workspace/ui/components/sheet"
-import { Avatar, AvatarFallback, AvatarImage } from "@workspace/ui/components/avatar"
 import { NavigationMenu } from "@workspace/ui/components/navigation-menu"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Button } from "@workspace/ui/components/button"
 import { useAppSelector } from "@/app/store/hooks"
 import { useRouter } from "next/navigation"
-import { UserData } from "@/app/types/user"
+import { UserAvatar } from "./userAvatar"
+import { Menu } from "lucide-react"
+import Link from "next/link"
 
 export function Navbar() {
   const router = useRouter()
@@ -81,15 +75,5 @@ export function Navbar() {
         </div>
       </div>
     </header>
-  )
-}
-
-export function UserAvatar({ user }: { user: UserData }) {
-  const router = useRouter()
-  return (
-    <Avatar className="cursor-pointer" onClick={() => router.push(`/app/profiles/${user.firebase_uid}`)}>
-      <AvatarImage src={user.avatar || ""} alt={user.username || "User"} />
-      <AvatarFallback>{user.username}</AvatarFallback>
-    </Avatar>
   )
 }

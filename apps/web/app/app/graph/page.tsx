@@ -130,18 +130,19 @@ const groupColors: Record<number, string> = {
 };
 
 const Page = () => {
-    const { showToast, ToastComponent } = useToast();
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-    const [mounted, setMounted] = useState(false);
-    const [currentData, setCurrentData] = useState<GraphData>(INITIAL_DATA);
+    const { showToast, ToastComponent } = useToast()
+    const [searchTerm, setSearchTerm] = useState("")
+    const [selectedNode, setSelectedNode] = useState<Node | null>(null)
+    const [mounted, setMounted] = useState(false)
+    const [currentData, setCurrentData] = useState<GraphData>(INITIAL_DATA)
     const [history, setHistory] = useState<GraphData[]>([])
-    const graphRef = useRef<any>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-    const [newLinkSource, setNewLinkSource] = useState("");
-    const [newLinkTarget, setNewLinkTarget] = useState("");
-    useEffect(() => { setMounted(true); }, []);
+    const graphRef = useRef<any>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
+    
+    useEffect(() => { 
+        setMounted(true)
+    }, [])
 
     useEffect(() => {
         if (!mounted || !containerRef.current) return;
@@ -155,18 +156,12 @@ const Page = () => {
         return () => resizeObserver.disconnect();
     }, [mounted]);
 
-    const zoomToFit = () => {
-        if (graphRef.current) {
-            setTimeout(() => {
-                graphRef.current.zoomToFit(400, 100)
-            }, 100);
-        }
-    };
+    const zoomToFit = () => { if (graphRef.current) setTimeout(() => { graphRef.current.zoomToFit(400, 100) }, 100) }
 
     const handleNodeClick = (node: Node) => {
         if (node.subGraph) {
-            setHistory(prev => [...prev, currentData]);
-            setCurrentData(node.subGraph);
+            setHistory(prev => [...prev, currentData])
+            setCurrentData(node.subGraph)
             setSelectedNode(null);
             setSearchTerm("");
             showToast(`Drilling into: ${node.name}`, 'info');
@@ -187,46 +182,6 @@ const Page = () => {
                 zoomToFit();
             }
         }
-    };
-
-    const addNode = () => {
-        const id = `node_${Date.now()}`;
-        const newNode: Node = { id, name: 'New Subject', group: 1, val: 10, x: 0, y: 0 };
-        setCurrentData(prev => ({ ...prev, nodes: [...prev.nodes, newNode] }));
-        setSelectedNode(newNode);
-        showToast("New Subject Added", "success");
-    };
-
-    const removeNode = (id: string) => {
-        setCurrentData(prev => ({
-            nodes: prev.nodes.filter(n => n.id !== id),
-            links: prev.links.filter((l: any) => {
-                const s = typeof l.source === 'object' ? l.source.id : l.source;
-                const t = typeof l.target === 'object' ? l.target.id : l.target;
-                return s !== id && t !== id;
-            })
-        }));
-        setSelectedNode(null);
-        showToast("Subject Removed", "warning");
-    };
-
-    const updateNode = (id: string, updates: Partial<Node>) => {
-        setCurrentData(prev => ({ ...prev, nodes: prev.nodes.map(n => n.id === id ? { ...n, ...updates } : n) }));
-        setSelectedNode((prev) => prev?.id === id ? { ...prev, ...updates } as Node : prev);
-    };
-
-    const addLink = () => {
-        if (!newLinkSource || !newLinkTarget) return showToast("Select both Source and Target", "error");
-        if (newLinkSource === newLinkTarget) return showToast("Source and Target cannot be the same", "error");
-        const linkExists = currentData.links.some((l: any) => {
-            const s = typeof l.source === 'object' ? l.source.id : l.source;
-            const t = typeof l.target === 'object' ? l.target.id : l.target;
-            return s === newLinkSource && t === newLinkTarget;
-        });
-        if (linkExists) return showToast("Relationship already exists", "warning");
-        setCurrentData(prev => ({ ...prev, links: [...prev.links, { source: newLinkSource, target: newLinkTarget }] }));
-        setNewLinkSource(""); setNewLinkTarget("");
-        showToast("Connection Created", "success");
     };
 
     const filteredNodes = useMemo(() => {
