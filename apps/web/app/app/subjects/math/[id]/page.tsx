@@ -185,6 +185,10 @@ const MathSubjectNodePage = () => {
                     <MathWorkbench 
                         isOpen={mathLabOpen} 
                         onClose={() => setMathLabOpen(false)} 
+                        onInjectImage={(url) => {
+                            setImgUrl(url)
+                            setWizardOpen(true)
+                        }}
                     />
                 </div>
 
