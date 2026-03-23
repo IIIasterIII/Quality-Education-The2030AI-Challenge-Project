@@ -9,11 +9,11 @@ import {
     ArrowUpRight
 } from "lucide-react"
 import { useRouter } from 'next/navigation'
-import { NodesCard } from "@/components/nodes/nodesCard"
-import { CreateNodesModal } from "@/components/nodes/createNodesModal"
-import { EditNodesModal } from "@/components/nodes/editNodesModal"
-import { DeleteNodesModal } from "@/components/nodes/deleteNodesModal"
-import { NoteNode } from "@/app/app/nodes/types"
+import { NotesCard } from "@/components/notes/notesCard"
+import { CreateNotesModal } from "@/components/notes/createNotesModal"
+import { EditNotesModal } from "@/components/notes/editNotesModal"
+import { DeleteNotesModal } from "@/components/notes/deleteNotesModal"
+import { NoteNode } from "@/app/app/notes/types"
 
 const INITIAL_NODES: NoteNode[] = [
     {
@@ -74,7 +74,7 @@ const INITIAL_NODES: NoteNode[] = [
 
 const page = () => {
     const router = useRouter()
-    const [nodes, setNodes] = useState<NoteNode[]>(INITIAL_NODES)
+    const [notes, setNotes] = useState<NoteNode[]>(INITIAL_NODES)
     const [searchQuery, setSearchQuery] = useState('')
     
     const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -82,22 +82,22 @@ const page = () => {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false)
     const [activeNode, setActiveNode] = useState<NoteNode | null>(null)
 
-    const handleCreateConfirm = (newNode: NoteNode) => {
-        setNodes([newNode, ...nodes])
+    const handleCreateConfirm = (newNote: NoteNode) => {
+        setNotes([newNote, ...notes])
         setIsCreateOpen(false)
     }
 
     const handleEditConfirm = (updatedNode: NoteNode) => {
-        setNodes(nodes.map(n => n.id === updatedNode.id ? updatedNode : n))
+        setNotes(notes.map(n => n.id === updatedNode.id ? updatedNode : n))
         setIsEditOpen(false)
     }
 
     const handleDeleteConfirm = (id: string) => {
-        setNodes(nodes.filter(n => n.id !== id))
+        setNotes(notes.filter(n => n.id !== id))
         setIsDeleteOpen(false)
     }
 
-    const filteredNodes = nodes.filter(n => 
+    const filteredNotes = notes.filter(n => 
         n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         n.preview.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -115,14 +115,14 @@ const page = () => {
                     />
                     <div className="text-sm font-bold text-zinc-500 flex items-center gap-3">
                         <Binary className="w-5 h-5 text-primary opacity-60" />
-                        <span>Nodes captured: {nodes.reduce((acc, curr) => acc + curr.nodesCount, 0)}</span>
+                        <span>Notes captured: {notes.reduce((acc, curr) => acc + curr.nodesCount, 0)}</span>
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
-                        {filteredNodes.map((node) => (
-                            <NodesCard 
+                        {filteredNotes.map((node) => (
+                            <NotesCard 
                                 key={node.id}
                                 node={node}
                                 onEdit={(n) => { setActiveNode(n); setIsEditOpen(true); }}
@@ -160,29 +160,29 @@ const page = () => {
                         </div>
                     </div>
 
-                    {filteredNodes.length === 0 && (
+                    {filteredNotes.length === 0 && (
                         <div className="py-20 text-center text-zinc-600 bg-zinc-900/10 rounded-[2rem] border border-dashed border-zinc-800">
-                            <p className="text-sm font-medium">No projects found matching "{searchQuery}"</p>
+                            <p className="text-sm font-medium">No notes found matching "{searchQuery}"</p>
                             <button onClick={() => setSearchQuery('')} className="mt-2 text-xs font-bold text-primary hover:underline">Clear filter</button>
                         </div>
                     )}
                 </div>
             </div>
 
-            <CreateNodesModal 
+            <CreateNotesModal 
                 isOpen={isCreateOpen} 
                 onOpenChange={setIsCreateOpen} 
                 onConfirm={handleCreateConfirm} 
             />
 
-            <EditNodesModal 
+            <EditNotesModal 
                 node={activeNode} 
                 isOpen={isEditOpen} 
                 onOpenChange={setIsEditOpen} 
                 onConfirm={handleEditConfirm} 
             />
 
-            <DeleteNodesModal 
+            <DeleteNotesModal 
                 node={activeNode} 
                 isOpen={isDeleteOpen} 
                 onOpenChange={setIsDeleteOpen} 

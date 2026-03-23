@@ -7,9 +7,9 @@ import { Button } from "@workspace/ui/components/button"
 import { useRouter, usePathname } from "next/navigation"
 import { useAppSelector } from "@/app/store/hooks"
 import { cn } from "@workspace/ui/lib/utils"
+import { UserAvatar } from "./userAvatar"
 import { Menu } from "lucide-react"
 import Link from "next/link"
-import { UserAvatar } from "./userAvatar"
 
 
 export function AppNavbar() {
@@ -20,15 +20,17 @@ export function AppNavbar() {
     const navItems = [
         { label: "Roadmaps", href: "/app/roadmaps" },
         { label: "Graph", href: "/app/graph" },
-        { label: "Nodes", href: "/app/nodes" },
+        { label: "Notes", href: "/app/notes" },
     ]
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
+        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 
+        backdrop-blur-xl supports-backdrop-filter:bg-background/60">
             <div className="h-16 flex items-center justify-between w-full max-w-7xl mx-auto px-6">
 
                 <Link href="/" className="flex items-center space-x-2 group">
-                    <span className="font-bold tracking-tight text-xl bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70 group-hover:from-primary group-hover:to-primary/70 transition-all duration-300">
+                    <span className="font-bold tracking-tight text-xl bg-clip-text text-transparent 
+                    bg-linear-to-r from-foreground to-foreground/70 group-hover:from-primary group-hover:to-primary/70 transition-all duration-300">
                         App
                     </span>
                 </Link>
@@ -66,7 +68,8 @@ export function AppNavbar() {
                     ) : (
                         <Button 
                             onClick={() => router.push('/auth')} 
-                            className="h-9 px-6 font-semibold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all duration-200"
+                            className="h-9 px-6 font-semibold shadow-md shadow-primary/20
+                             hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all duration-200"
                         >
                             Start
                         </Button>

@@ -1,16 +1,16 @@
 "use client"
 import { GitBranch, Pencil, Trash2 } from "lucide-react"
-import { NoteNode } from "@/app/app/nodes/types"
+import { NoteNode } from "@/app/app/notes/types"
 import React from 'react'
 
-interface NodesCardProps {
+interface NotesCardProps {
     node: NoteNode;
     onEdit: (node: NoteNode) => void;
     onDelete: (node: NoteNode) => void;
     onClick: () => void;
 }
 
-export const NodesCard = ({ node, onEdit, onDelete, onClick }: NodesCardProps) => {
+export const NotesCard = ({ node, onEdit, onDelete, onClick }: NotesCardProps) => {
     return (
         <div 
             onClick={onClick}
