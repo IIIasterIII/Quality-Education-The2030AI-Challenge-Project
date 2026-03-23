@@ -54,7 +54,7 @@ const page = () => {
     )
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 selection:bg-primary/30 selection:text-primary font-sans relative">
+        <div className="min-h-screen bg-[#0a0a0a] text-zinc-100 selection:bg-primary/30 selection:text-primary font-sans relative w-full">
             <div className="max-w-[1200px] mx-auto pt-5 px-4">
                 <div className="flex items-center justify-between mb-16 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />

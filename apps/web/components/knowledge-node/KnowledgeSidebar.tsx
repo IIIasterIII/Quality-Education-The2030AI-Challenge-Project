@@ -16,6 +16,7 @@ interface KnowledgeSidebarProps {
 export const KnowledgeSidebar = ({ subNodes, isAddingSub, setIsAddingSub, setSubNodes }: KnowledgeSidebarProps) => {
     const router = useRouter()
     const note_page_id = useParams().id
+    const note_page_uid = useParams().uid
     const [subNoteTitle, setSubNoteTitle] = useState<string>("")
 
     const handleAddSubNote = async () => {
@@ -40,18 +41,18 @@ export const KnowledgeSidebar = ({ subNodes, isAddingSub, setIsAddingSub, setSub
 
     return (
         <aside className="w-64 border-r border-zinc-900 bg-[#080808] flex flex-col pt-6 shrink-0">
-            <div className="px-6 mb-8">
+            {note_page_uid && <div className="px-6 mb-8">
                 <button 
                     onClick={() => {
                         console.log("[SIDEBAR] Navigating back to Subjects");
-                        router.push('/app/subjects')
+                        router.push(`/app/notes/${note_page_id}`)
                     }}
                     className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-600 hover:text-zinc-400 transition-colors"
                 >
                     <ArrowLeft className="w-3 h-3" />
                     Subjects
                 </button>
-            </div>
+            </div>}
 
             <div className="flex-1 overflow-y-auto px-3 space-y-1 scrollbar-hide">
                 <div className="text-[10px] font-black uppercase tracking-widest text-zinc-700 px-3 py-2">Files</div>
@@ -60,7 +61,7 @@ export const KnowledgeSidebar = ({ subNodes, isAddingSub, setIsAddingSub, setSub
                         key={node.id}
                         onClick={() => {
                             console.log("[SIDEBAR] Navigating to subnote:", node.title, node.id);
-                            router.push(`${note_page_id}/subnotes/${node.id}`)
+                            router.push(`/app/notes/${note_page_id}/subnotes/${node.id}`)
                         }}
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-900 group transition-all cursor-pointer"
                     >
