@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -26,8 +26,6 @@ import { Anchor as AnchorIcon } from "lucide-react"
 const SubjectNodePage = () => {
     const params = useParams()
     const id = params.id as string
-
-    /* --- Nodes State --- */
     const [subNodes, setSubNodes] = useState<SubNode[]>([
         { id: '101', title: 'Algebra' },
         { id: '102', title: 'Calculus' },
@@ -35,19 +33,14 @@ const SubjectNodePage = () => {
     ])
     const [newSubTitle, setNewSubTitle] = useState("")
     const [isAddingSub, setIsAddingSub] = useState(false)
-    
-    /* --- Wizard State --- */
     const [wizardOpen, setWizardOpen] = useState(false)
     const [imgUrl, setImgUrl] = useState("")
     const [imgRotation, setImgRotation] = useState(0)
     const [imgScale, setImgScale] = useState(1)
     const [imgAlign, setImgAlign] = useState<'left' | 'center' | 'right'>('center')
     const [localSliderScale, setLocalSliderScale] = useState(1)
-    
-    /* --- Anchors State --- */
     const [anchors, setAnchors] = useState<{ id: string, text: string }[]>([])
 
-    /* --- File Handling --- */
     const handleFile = (file: File) => {
         if (!file.type.startsWith('image/')) return
         const reader = new FileReader()
@@ -59,7 +52,6 @@ const SubjectNodePage = () => {
         reader.readAsDataURL(file)
     }
 
-    /* --- Extension: Anchor --- */
     const Anchor = Mark.create({
         name: 'anchor',
         addAttributes() {
@@ -73,7 +65,6 @@ const SubjectNodePage = () => {
         },
     })
 
-    /* --- Editor Instance --- */
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
@@ -123,14 +114,14 @@ const SubjectNodePage = () => {
             attributes: {
                 class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed selection:bg-primary/20',
             },
-            handleDrop: (view, event) => {
+            handleDrop: (_, event) => {
                 if (event.dataTransfer?.files?.[0]) {
                     handleFile(event.dataTransfer.files[0])
                     return true 
                 }
                 return false
             },
-            handlePaste: (view, event) => {
+            handlePaste: (_, event) => {
                 if (event.clipboardData?.files?.[0]) {
                     handleFile(event.clipboardData.files[0])
                     return true
@@ -138,7 +129,7 @@ const SubjectNodePage = () => {
                 return false
             },
             handleDOMEvents: {
-                dblclick: (view, event) => {
+                dblclick: (_, event) => {
                     const target = event.target as HTMLElement
                     if (target.tagName === 'IMG') {
                         setTimeout(() => editImageByNode(), 10)
@@ -150,7 +141,6 @@ const SubjectNodePage = () => {
         },
     })
 
-    /* --- Business Logic --- */
     const handleInsertImageFinal = () => {
         if (!imgUrl) return
         const layoutStyle = imgAlign === 'left' ? 'float: left; margin-right: 2rem; margin-bottom: 1.5rem; display: inline-block;' : 
@@ -206,7 +196,6 @@ const SubjectNodePage = () => {
         const el = document.querySelector(`[data-anchor-id="${id}"]`)
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            // Highlight it briefly
             el.classList.add('ring-4', 'ring-primary', 'transition-all', 'duration-500')
             setTimeout(() => el.classList.remove('ring-4', 'ring-primary'), 1000)
         }
@@ -256,7 +245,6 @@ const SubjectNodePage = () => {
 
             <main className="flex-1 flex bg-[#050505] overflow-hidden relative">
                 
-                {/* Anchor Rail (Left side of main area) */}
                 {anchors.length > 0 && (
                     <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">
                         <div className="flex flex-col items-center group-hover:items-start px-3 gap-6">

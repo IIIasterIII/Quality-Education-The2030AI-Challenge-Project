@@ -27,7 +27,6 @@ const MathSubjectNodePage = () => {
     const params = useParams()
     const id = params.id as string
 
-    /* --- Nodes State --- */
     const [subNodes, setSubNodes] = useState<SubNode[]>([
         { id: 'math-101', title: 'Linear Algebra' },
         { id: 'math-102', title: 'Topological Dynamics' },
@@ -152,7 +151,6 @@ const MathSubjectNodePage = () => {
             />
 
             <main className="flex-1 flex bg-[#050505] overflow-hidden relative">
-                 {/* Anchor Rail */}
                  {anchors.length > 0 && (
                     <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">
                         <div className="flex flex-col items-center group-hover:items-start px-3 gap-6">

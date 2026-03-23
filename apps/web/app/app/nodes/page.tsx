@@ -9,13 +9,11 @@ import {
     ArrowUpRight
 } from "lucide-react"
 import { useRouter } from 'next/navigation'
-// Components
-import { SubjectCard } from "@/components/subjects/SubjectCard"
-import { CreateSubjectModal } from "@/components/subjects/CreateSubjectModal"
-import { EditSubjectModal } from "@/components/subjects/EditSubjectModal"
-import { DeleteSubjectModal } from "@/components/subjects/DeleteSubjectModal"
-// Types
-import { NoteNode } from "@/app/app/subjects/types"
+import { NodesCard } from "@/components/nodes/nodesCard"
+import { CreateNodesModal } from "@/components/nodes/createNodesModal"
+import { EditNodesModal } from "@/components/nodes/editNodesModal"
+import { DeleteNodesModal } from "@/components/nodes/deleteNodesModal"
+import { NoteNode } from "@/app/app/nodes/types"
 
 const INITIAL_NODES: NoteNode[] = [
     {
@@ -124,12 +122,12 @@ const page = () => {
                 <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
                         {filteredNodes.map((node) => (
-                            <SubjectCard 
+                            <NodesCard 
                                 key={node.id}
                                 node={node}
                                 onEdit={(n) => { setActiveNode(n); setIsEditOpen(true); }}
                                 onDelete={(n) => { setActiveNode(n); setIsDeleteOpen(true); }}
-                                onClick={() => router.push(node.type === 'math' ? `/app/subjects/math/${node.id}` : `/app/subjects/${node.id}`)}
+                                onClick={() => router.push(node.type === 'math' ? `/app/nodes/math/${node.id}` : `/app/nodes/${node.id}`)}
                             />
                         ))}
 
@@ -171,20 +169,20 @@ const page = () => {
                 </div>
             </div>
 
-            <CreateSubjectModal 
+            <CreateNodesModal 
                 isOpen={isCreateOpen} 
                 onOpenChange={setIsCreateOpen} 
                 onConfirm={handleCreateConfirm} 
             />
 
-            <EditSubjectModal 
+            <EditNodesModal 
                 node={activeNode} 
                 isOpen={isEditOpen} 
                 onOpenChange={setIsEditOpen} 
                 onConfirm={handleEditConfirm} 
             />
 
-            <DeleteSubjectModal 
+            <DeleteNodesModal 
                 node={activeNode} 
                 isOpen={isDeleteOpen} 
                 onOpenChange={setIsDeleteOpen} 

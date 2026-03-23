@@ -11,16 +11,16 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { NoteNode } from "@/app/app/subjects/types"
+import { NoteNode } from "@/app/app/nodes/types"
 
-interface DeleteSubjectModalProps {
+interface DeleteNodesModalProps {
     node: NoteNode | null;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     onConfirm: (nodeId: string) => void;
 }
 
-export const DeleteSubjectModal = ({ node, isOpen, onOpenChange, onConfirm }: DeleteSubjectModalProps) => {
+export const DeleteNodesModal = ({ node, isOpen, onOpenChange, onConfirm }: DeleteNodesModalProps) => {
     const [confirmName, setConfirmName] = useState('')
 
     const handleConfirm = () => {

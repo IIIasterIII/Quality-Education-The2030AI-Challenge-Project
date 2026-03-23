@@ -20,7 +20,7 @@ export function AppNavbar() {
     const navItems = [
         { label: "Roadmaps", href: "/app/roadmaps" },
         { label: "Graph", href: "/app/graph" },
-        { label: "Subjects", href: "/app/subjects" },
+        { label: "Nodes", href: "/app/nodes" },
     ]
 
     return (

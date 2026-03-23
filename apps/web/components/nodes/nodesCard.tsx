@@ -1,16 +1,16 @@
 "use client"
+import { GitBranch, Pencil, Trash2 } from "lucide-react"
+import { NoteNode } from "@/app/app/nodes/types"
 import React from 'react'
-import { GitBranch, ArrowUpRight, Pencil, Trash2 } from "lucide-react"
-import { NoteNode } from "@/app/app/subjects/types"
 
-interface SubjectCardProps {
+interface NodesCardProps {
     node: NoteNode;
     onEdit: (node: NoteNode) => void;
     onDelete: (node: NoteNode) => void;
     onClick: () => void;
 }
 
-export const SubjectCard = ({ node, onEdit, onDelete, onClick }: SubjectCardProps) => {
+export const NodesCard = ({ node, onEdit, onDelete, onClick }: NodesCardProps) => {
     return (
         <div 
             onClick={onClick}
@@ -22,20 +22,19 @@ export const SubjectCard = ({ node, onEdit, onDelete, onClick }: SubjectCardProp
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <h4 className="text-lg font-bold text-zinc-200 group-hover:text-primary transition-colors">{node.title}</h4>
-                            <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-40 transition-opacity" />
                         </div>
                         <p className="text-xs text-zinc-500 leading-relaxed max-w-[90%] line-clamp-2">{node.preview}</p>
                     </div>
                     <div className="flex gap-1">
                         <button 
                             onClick={(e) => { e.stopPropagation(); onEdit(node); }}
-                            className="p-1.5 rounded-lg hover:bg-primary/10 text-zinc-600 hover:text-primary transition-all"
+                            className="p-1.5 rounded-lg hover:bg-primary/10 cursor-pointer text-zinc-600 hover:text-primary transition-all"
                         >
                             <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); onDelete(node); }}
-                            className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-600 hover:text-red-500 transition-all"
+                            className="p-1.5 rounded-lg hover:bg-red-500/10 cursor-pointer text-zinc-600 hover:text-red-500 transition-all"
                         >
                             <Trash2 className="w-3.5 h-3.5" />
                         </button>
