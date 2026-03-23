@@ -72,6 +72,8 @@ def create_subnote(
     note = db.query(Notes).filter(Notes.id == page_id, Notes.user_id == current_user.id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
+    if db.query(SubNotes).filter(SubNotes.note_id == page_id, SubNotes.title == data.title).first():
+        raise HTTPException(status_code=400, detail="Subnote with this title already exists")
     new_subnote = SubNotes( note_id=page_id, title=data.title )
     db.add(new_subnote)
     db.commit()

@@ -1,36 +1,42 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { File, ArrowLeft, Plus } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
-import { SubNode } from "./types"
-import { createNewSubNote } from '@/app/api/notes'
+import { SubNode as SubNote } from "./types"
+import { createNewSubNote, getSubNotes } from '@/app/api/notes'
 
 interface KnowledgeSidebarProps {
-    subNodes: SubNode[];
+    subNodes: SubNote[];
     isAddingSub: boolean;
-    newSubTitle: string;
     setIsAddingSub: (val: boolean) => void;
+    setSubNodes: React.Dispatch<React.SetStateAction<SubNote[]>>;
 }
 
-export const KnowledgeSidebar = ({
-    subNodes,
-    isAddingSub,
-    setIsAddingSub,
-}: KnowledgeSidebarProps) => {
+export const KnowledgeSidebar = ({ subNodes, isAddingSub, setIsAddingSub, setSubNodes }: KnowledgeSidebarProps) => {
     const router = useRouter()
     const note_page_id = useParams().id
     const [subNoteTitle, setSubNoteTitle] = useState<string>("")
 
     const handleAddSubNote = async () => {
-        if(!subNoteTitle || !note_page_id) return
-        const res = await createNewSubNote(note_page_id as string, subNoteTitle)
+        if(!subNoteTitle || !note_page_id || subNodes.some(note => note.title === subNoteTitle)) return
+        const res: SubNote | null = await createNewSubNote(note_page_id as string, subNoteTitle)
         if(res) {
             router.push(`${note_page_id}/subnotes/${res.id}`)
             setSubNoteTitle("")
             setIsAddingSub(false)
+            setSubNodes((prev: SubNote[]) => [...prev, res])
         }
     }
+
+    useEffect(() => {
+        const getSubNotesFunc = async () => {
+            if (!note_page_id) return
+            const res = await getSubNotes(note_page_id as string)
+            if(res) setSubNodes(res)
+        }
+        getSubNotesFunc()
+    }, [note_page_id, setSubNodes])
 
     return (
         <aside className="w-64 border-r border-zinc-900 bg-[#080808] flex flex-col pt-6 shrink-0">

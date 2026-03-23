@@ -15,7 +15,7 @@ import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
-import { KnowledgeSidebar } from "@/components/knowledge-node/KnowledgeSidebar"
+import { useNote } from "@/context/NoteContext"
 import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
 import { SubNode } from "@/components/knowledge-node/types"
@@ -25,13 +25,7 @@ import { Anchor as AnchorIcon } from "lucide-react"
 const SubjectNodePage = () => {
     const params = useParams()
     const id = params.id as string
-    const [subNodes, setSubNodes] = useState<SubNode[]>([
-        { id: '101', title: 'Algebra' },
-        { id: '102', title: 'Calculus' },
-        { id: '103', title: 'Geometry' }
-    ])
-    const [newSubTitle, setNewSubTitle] = useState("")
-    const [isAddingSub, setIsAddingSub] = useState(false)
+    const { subNodes, setSubNodes, isAddingSub, setIsAddingSub } = useNote()
     const [wizardOpen, setWizardOpen] = useState(false)
     const [imgUrl, setImgUrl] = useState("")
     const [imgRotation, setImgRotation] = useState(0)
@@ -225,26 +219,10 @@ const SubjectNodePage = () => {
         editor.chain().focus().updateAttributes('image', { style: newStyle }).run()
     }, [editor])
 
-    const handleAddSubNode = () => {
-        if (!newSubTitle) return
-        const newNode = { id: Date.now().toString(), title: newSubTitle }
-        setSubNodes([...subNodes, newNode])
-        setNewSubTitle("")
-        setIsAddingSub(false)
-    }
+
 
     return (
-        <div className="flex h-screen bg-[#050505] text-zinc-300 overflow-hidden font-sans">
-            <KnowledgeSidebar 
-                subNodes={subNodes}
-                isAddingSub={isAddingSub}
-                newSubTitle={newSubTitle}
-                setIsAddingSub={setIsAddingSub}
-                setNewSubTitle={setNewSubTitle}
-                handleAddSubNode={handleAddSubNode}
-            />
-
-            <main className="flex-1 flex bg-[#050505] overflow-hidden relative">
+        <main className="flex-1 flex bg-[#050505] overflow-hidden relative">
                 
                 {anchors.length > 0 && (
                     <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">
@@ -314,7 +292,6 @@ const SubjectNodePage = () => {
                     .ProseMirror li p { margin: 0; }
                 `}</style>
             </main>
-        </div>
     )
 }
 
