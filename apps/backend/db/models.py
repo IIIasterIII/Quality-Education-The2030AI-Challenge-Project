@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, JSON, Text, Float
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, JSON, Text, Float, DateTime
+from datetime import datetime, timezone
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -13,6 +14,7 @@ class User(Base):
     avatar = Column(String(255), nullable=True)
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     roadmaps = relationship("RoadMap", back_populates="user", cascade="all, delete-orphan")
+    notes = relationship("Notes", back_populates="user", cascade="all, delete-orphan")
 
 class Profile(Base):
     __tablename__ = 'profiles' 
@@ -58,3 +60,23 @@ class EdgeModel(Base):
     sourceHandle = Column(String(255), nullable=True)
     targetHandle = Column(String(255), nullable=True)
     roadmap = relationship("RoadMap", back_populates="edges")
+
+class Notes(Base):
+    __tablename__ = "notes"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(255), nullable=False)
+    preview = Column(String(255), nullable=True)
+    notesCount = Column(Integer, nullable=False, default=0)
+    updatedAt = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    accentColor = Column(String(255), nullable=False)
+    type = Column(String(50), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
+    user = relationship("User", back_populates="notes")
+    subnotes = relationship("SubNotes", back_populates="note", cascade="all, delete-orphan")
+
+class SubNotes(Base):
+    __tablename__ = "subNotes"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(255), nullable=False)
+    note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
+    note = relationship("Notes", back_populates="subnotes")

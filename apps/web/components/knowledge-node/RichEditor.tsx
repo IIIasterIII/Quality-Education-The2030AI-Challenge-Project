@@ -160,13 +160,21 @@ export const RichEditor = ({
                     <div className="w-px h-4 bg-white/5 mx-1" />
                     <Button size="icon" variant="ghost" title="Internal Link" className="h-8 w-8 rounded-full hover:bg-primary/20 text-zinc-300" onClick={() => {
                         const nodeId = window.prompt('Enter Subject ID / Path (e.g. 101)')
-                        if (nodeId) editor.chain().focus().setLink({ href: `/app/subjects/${nodeId}` }).run()
+                        console.log("[EDITOR] Prompt result for internal link:", nodeId);
+                        if (nodeId) {
+                            console.log("[EDITOR] Setting internal link to:", `/app/subjects/${nodeId}`);
+                            editor.chain().focus().setLink({ href: `/app/subjects/${nodeId}` }).run()
+                        }
                     }}>
                         <FileText className="w-3.5 h-3.5 text-zinc-400" />
                     </Button>
                     <Button size="icon" variant="ghost" title="External Link" className="h-8 w-8 rounded-full hover:bg-primary/20 text-zinc-300" onClick={() => {
                         const url = window.prompt('External URL (e.g. https://google.com)')
-                        if (url) editor.chain().focus().setLink({ href: url }).run()
+                        console.log("[EDITOR] Prompt result for external link:", url);
+                        if (url) {
+                            console.log("[EDITOR] Setting external link to:", url);
+                            editor.chain().focus().setLink({ href: url }).run()
+                        }
                     }}>
                         <ExternalLink className="w-3.5 h-3.5 text-primary" />
                     </Button>

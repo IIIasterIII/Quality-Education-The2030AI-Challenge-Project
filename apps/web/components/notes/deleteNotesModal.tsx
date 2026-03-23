@@ -11,10 +11,11 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
-import { NoteNode } from "@/app/app/notes/types"
+import { NoteNote } from "@/app/app/notes/types"
+import { deleteNote } from '@/app/api/notes'
 
 interface DeleteNotesModalProps {
-    node: NoteNode | null;
+    node: NoteNote | null;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     onConfirm: (nodeId: string) => void;
@@ -23,11 +24,14 @@ interface DeleteNotesModalProps {
 export const DeleteNotesModal = ({ node, isOpen, onOpenChange, onConfirm }: DeleteNotesModalProps) => {
     const [confirmName, setConfirmName] = useState('')
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!node || confirmName !== node.title) return;
-        onConfirm(node.id)
-        setConfirmName('')
-        onOpenChange(false)
+        const res = await deleteNote(node.id as number)
+        if(res) {
+            onConfirm(node.id as string)
+            setConfirmName('')
+            onOpenChange(false)
+        }
     }
 
     return (
@@ -36,14 +40,14 @@ export const DeleteNotesModal = ({ node, isOpen, onOpenChange, onConfirm }: Dele
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-[80px] pointer-events-none" />
                 
                 <AlertDialogHeader>
-                    <AlertDialogTitle className="text-2xl font-black italic tracking-tight text-red-500">TERMINATE SUBJECT</AlertDialogTitle>
+                    <AlertDialogTitle className="text-2xl font-black tracking-tight text-red-500">TERMINATE SUBJECT</AlertDialogTitle>
                     <AlertDialogDescription className="text-zinc-500 text-xs font-medium border-b border-red-900/20 pb-4">
                         This action is irreversible. All associated data within this node will be purged.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 
                 <div className="space-y-6 py-6">
-                    <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-[10px] leading-relaxed text-red-200/60 uppercase font-bold tracking-widest">
+                    <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10 text-[10px] leading-relaxed text-red-200/60 font-bold tracking-widest">
                         To confirm the deletion of <span className="text-red-500">"{node?.title}"</span>, please type the project name below.
                     </div>
 

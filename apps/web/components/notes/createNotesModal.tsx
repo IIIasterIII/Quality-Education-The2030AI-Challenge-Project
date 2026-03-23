@@ -12,39 +12,45 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
-import { COLORS, NoteNode } from "@/app/app/notes/types"
+import { COLORS, NoteNote as Note, NoteToCreate } from "@/app/app/notes/types"
+import { createNewNote } from '@/app/api/notes'
 
 interface CreateNotesModalProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onConfirm: (newNode: NoteNode) => void;
+    onConfirm: (newNode: Note) => void;
+    notes: Note[];
 }
 
-export const CreateNotesModal = ({ isOpen, onOpenChange, onConfirm }: CreateNotesModalProps) => {
+export const CreateNotesModal = ({ isOpen, onOpenChange, onConfirm, notes }: CreateNotesModalProps) => {
     const [title, setTitle] = useState('')
     const [desc, setDesc] = useState('')
     const [color, setColor] = useState('#3b82f6')
     const [type, setType] = useState<'normal' | 'math'>('normal')
 
-    const handleCreate = () => {
-        if (!title) return;
-        
-        onConfirm({
-            id: Date.now().toString(),
-            title,
-            preview: desc,
-            nodesCount: 0,
-            updatedAt: 'Just now',
-            accentColor: color,
-            type
-        })
+    const handleCreate = async () => {
+        if (!title) return
+        if (notes.some(n => n.title === title)) {
+            console.warn("Note with this title already exists")
+            return
+        }
 
-        // Reset
-        setTitle('')
-        setDesc('')
-        setColor('#3b82f6')
-        setType('normal')
-        onOpenChange(false)
+        const new_note : NoteToCreate = {
+            title: title,
+            preview: desc,
+            accentColor: color,
+            type: type
+        }
+
+        const res = await createNewNote(new_note)
+        if(res) {
+            onConfirm(res)
+            setTitle('')
+            setDesc('')
+            setColor('#3b82f6')
+            setType('normal')
+            onOpenChange(false)
+        }
     }
 
     return (

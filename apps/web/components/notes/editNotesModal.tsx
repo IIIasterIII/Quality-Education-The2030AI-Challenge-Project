@@ -12,16 +12,18 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import { Textarea } from "@workspace/ui/components/textarea"
-import { COLORS, NoteNode } from "@/app/app/notes/types"
+import { COLORS, NoteNote as Note } from "@/app/app/notes/types"
+import { editNote } from '@/app/api/notes'
 
 interface EditNotesModalProps {
-    node: NoteNode | null;
+    node: Note | null;
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
-    onConfirm: (updatedNode: NoteNode) => void;
+    onConfirm: (updatedNode: Note) => void;
+    notes: Note[]
 }
 
-export const EditNotesModal = ({ node, isOpen, onOpenChange, onConfirm }: EditNotesModalProps) => {
+export const EditNotesModal = ({ node, isOpen, onOpenChange, onConfirm, notes }: EditNotesModalProps) => {
     const [title, setTitle] = useState('')
     const [desc, setDesc] = useState('')
     const [color, setColor] = useState('#3b82f6')
@@ -34,17 +36,22 @@ export const EditNotesModal = ({ node, isOpen, onOpenChange, onConfirm }: EditNo
         }
     }, [node])
 
-    const handleUpdate = () => {
-        if (!node || !title) return;
+    const handleUpdate = async () => {
+        if (!node || !title) return
+        if (notes.some(n => n.title === title)) {
+            console.warn("Note with this title already exists")
+            return
+        }
         
-        onConfirm({
-            ...node,
+        const res = await editNote(node.id as number, {
             title,
             preview: desc,
-            accentColor: color,
-            updatedAt: 'Updated'
+            accentColor: color
         })
-        onOpenChange(false)
+        if(res) {
+            onConfirm(res)
+            onOpenChange(false)
+        }
     }
 
     return (

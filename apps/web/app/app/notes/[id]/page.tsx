@@ -15,7 +15,6 @@ import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
-
 import { KnowledgeSidebar } from "@/components/knowledge-node/KnowledgeSidebar"
 import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
@@ -96,6 +95,7 @@ const SubjectNodePage = () => {
             Anchor
         ],
         onUpdate: ({ editor }) => {
+            console.log("[EDITOR] Writing/Typing:", editor.getText());
             const seen = new Set<string>()
             const uniqueAnchors: { id: string, text: string }[] = []
             
@@ -109,7 +109,8 @@ const SubjectNodePage = () => {
             })
             setAnchors(uniqueAnchors)
         },
-        content: `<h1>Brain Node: ${id}</h1><p>Capture your thoughts with real-time Markdown conversion. Type # followed by a space to create a heading, or - for a list entry.</p>`,
+        content: `<h1>Brain Node: ${id}</h1><p>Capture your thoughts with real-time Markdown conversion.
+        Type # followed by a space to create a heading, or - for a list entry.</p>`,
         editorProps: {
             attributes: {
                 class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed selection:bg-primary/20',

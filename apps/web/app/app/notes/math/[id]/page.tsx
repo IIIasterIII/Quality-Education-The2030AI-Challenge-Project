@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -16,7 +16,6 @@ import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import { Mark, mergeAttributes } from '@tiptap/core'
-
 import { KnowledgeSidebar } from "@/components/knowledge-node/KnowledgeSidebar"
 import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
@@ -26,7 +25,6 @@ import { MathWorkbench } from "@/components/knowledge-node/MathWorkbench"
 const MathSubjectNodePage = () => {
     const params = useParams()
     const id = params.id as string
-
     const [subNodes, setSubNodes] = useState<SubNode[]>([
         { id: 'math-101', title: 'Linear Algebra' },
         { id: 'math-102', title: 'Topological Dynamics' },
@@ -34,16 +32,12 @@ const MathSubjectNodePage = () => {
     ])
     const [newSubTitle, setNewSubTitle] = useState("")
     const [isAddingSub, setIsAddingSub] = useState(false)
-    
-    /* --- Wizard State --- */
     const [wizardOpen, setWizardOpen] = useState(false)
     const [imgUrl, setImgUrl] = useState("")
     const [imgRotation, setImgRotation] = useState(0)
     const [imgScale, setImgScale] = useState(1)
     const [imgAlign, setImgAlign] = useState<'left' | 'center' | 'right'>('center')
     const [localSliderScale, setLocalSliderScale] = useState(1)
-
-    /* --- Math State --- */
     const [mathLabOpen, setMathLabOpen] = useState(false)
     const [anchors, setAnchors] = useState<{ id: string, text: string }[]>([])
 
@@ -71,12 +65,7 @@ const MathSubjectNodePage = () => {
         extensions: [
             StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
             Image.extend({
-                addAttributes() {
-                    return {
-                        ...this.parent?.(),
-                        style: { default: '', renderHTML: a => ({ style: a.style }) },
-                    }
-                },
+                addAttributes() { return { ...this.parent?.(), style: { default: '', renderHTML: a => ({ style: a.style }) }, } },
             }).configure({ inline: true, allowBase64: true }),
             Link.configure({ openOnClick: false }),
             Placeholder.configure({ placeholder: 'Dive into advanced mathematics... Use the Math Lab for visualizations.' }),
@@ -87,6 +76,7 @@ const MathSubjectNodePage = () => {
         ],
         content: `<h1>Mathematical Laboratory: ${id}</h1><p>Here you can combine deep theoretical notes with interactive 2D and 3D visualizations. Use the <b>Pi</b> icon in the floating menu to launch the workbench.</p>`,
         onUpdate: ({ editor }) => {
+            console.log("[EDITOR] Writing/Typing:", editor.getText());
             const seen = new Set<string>()
             const list: any[] = []
             editor.state.doc.descendants((node) => {
@@ -101,8 +91,8 @@ const MathSubjectNodePage = () => {
         },
         editorProps: {
             attributes: { class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed' },
-            handleDrop: (v, e) => { if (e.dataTransfer?.files?.[0]) { handleFile(e.dataTransfer.files[0]); return true } return false },
-            handlePaste: (v, e) => { if (e.clipboardData?.files?.[0]) { handleFile(e.clipboardData.files[0]); return true } return false },
+            handleDrop: (_, e) => { if (e.dataTransfer?.files?.[0]) { handleFile(e.dataTransfer.files[0]); return true } return false },
+            handlePaste: (_, e) => { if (e.clipboardData?.files?.[0]) { handleFile(e.clipboardData.files[0]); return true } return false },
             handleDOMEvents: { dblclick: (v, e) => { if ((e.target as HTMLElement).tagName === 'IMG') { setTimeout(() => editImageByNode(), 10); return true } return false } }
         },
     })
@@ -147,7 +137,7 @@ const MathSubjectNodePage = () => {
         <div className="flex h-screen bg-[#050505] text-zinc-300 overflow-hidden">
             <KnowledgeSidebar 
                 subNodes={subNodes} isAddingSub={isAddingSub} newSubTitle={newSubTitle}
-                setIsAddingSub={setIsAddingSub} setNewSubTitle={setNewSubTitle} handleAddSubNode={() => {}}
+                setIsAddingSub={setIsAddingSub}
             />
 
             <main className="flex-1 flex bg-[#050505] overflow-hidden relative">

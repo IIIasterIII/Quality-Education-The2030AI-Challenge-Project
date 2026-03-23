@@ -1,5 +1,6 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { getNotes } from "../../api/notes"
 import { Input } from "@workspace/ui/components/input"
 import { 
     Plus, 
@@ -13,81 +14,31 @@ import { NotesCard } from "@/components/notes/notesCard"
 import { CreateNotesModal } from "@/components/notes/createNotesModal"
 import { EditNotesModal } from "@/components/notes/editNotesModal"
 import { DeleteNotesModal } from "@/components/notes/deleteNotesModal"
-import { NoteNode } from "@/app/app/notes/types"
-
-const INITIAL_NODES: NoteNode[] = [
-    {
-        id: '1',
-        title: 'Discrete Mathematics',
-        preview: 'Hierarchical notes on logic, sets, and graph theory. Decomposes into vectors & matrices.',
-        nodesCount: 42,
-        updatedAt: '2h ago',
-        accentColor: '#3b82f6',
-        type: 'math'
-    },
-    {
-        id: '2',
-        title: 'Application Architecture',
-        preview: 'System design patterns, microservices, and API contracts for the project.',
-        nodesCount: 15,
-        updatedAt: 'Yesterday',
-        accentColor: '#10b981',
-        type: 'normal'
-    },
-    {
-        id: '3',
-        title: 'Personal Learning Log',
-        preview: 'Daily reflections, quick snippets, and thoughts captured for the graph.',
-        nodesCount: 128,
-        updatedAt: 'Just now',
-        accentColor: '#f59e0b',
-        type: 'normal'
-    },
-    {
-        id: '11',
-        title: 'Graph Theory Foundations',
-        preview: 'Core concepts of vertex connectivity, paths, and cycles in unweighted graphs.',
-        nodesCount: 28,
-        updatedAt: '3h ago',
-        accentColor: '#3b82f6',
-        type: 'math'
-    },
-    {
-        id: '22',
-        title: 'Cloud Infrastructure',
-        preview: 'Kubernetes orchestration, VPC peering and security group configuration.',
-        nodesCount: 22,
-        updatedAt: '3 days ago',
-        accentColor: '#10b981',
-        type: 'normal'
-    },
-    {
-        id: '33',
-        title: 'Research Methodology',
-        preview: 'Qualitative analysis patterns and literature review structures.',
-        nodesCount: 45,
-        updatedAt: 'Last week',
-        accentColor: '#f59e0b',
-        type: 'normal'
-    }
-]
+import { NoteNote } from "@/app/app/notes/types"
 
 const page = () => {
     const router = useRouter()
-    const [notes, setNotes] = useState<NoteNode[]>(INITIAL_NODES)
+    const [notes, setNotes] = useState<NoteNote[]>([])
     const [searchQuery, setSearchQuery] = useState('')
-    
     const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isDeleteOpen, setIsDeleteOpen] = useState(false)
-    const [activeNode, setActiveNode] = useState<NoteNode | null>(null)
+    const [activeNote, setActiveNote] = useState<NoteNote | null>(null)
 
-    const handleCreateConfirm = (newNote: NoteNode) => {
+    useEffect(() => {
+        const fetchNotes = async () => {
+            const data = await getNotes()
+            if (data) setNotes(data)
+        }
+        fetchNotes()
+    }, [])
+
+    const handleCreateConfirm = (newNote: NoteNote) => {
         setNotes([newNote, ...notes])
         setIsCreateOpen(false)
     }
 
-    const handleEditConfirm = (updatedNode: NoteNode) => {
+    const handleEditConfirm = (updatedNode: NoteNote) => {
         setNotes(notes.map(n => n.id === updatedNode.id ? updatedNode : n))
         setIsEditOpen(false)
     }
@@ -115,7 +66,7 @@ const page = () => {
                     />
                     <div className="text-sm font-bold text-zinc-500 flex items-center gap-3">
                         <Binary className="w-5 h-5 text-primary opacity-60" />
-                        <span>Notes captured: {notes.reduce((acc, curr) => acc + curr.nodesCount, 0)}</span>
+                        <span>Notes captured: {notes.reduce((acc, curr) => acc + curr.notesCount, 0)}</span>
                     </div>
                 </div>
 
@@ -125,9 +76,9 @@ const page = () => {
                             <NotesCard 
                                 key={node.id}
                                 node={node}
-                                onEdit={(n) => { setActiveNode(n); setIsEditOpen(true); }}
-                                onDelete={(n) => { setActiveNode(n); setIsDeleteOpen(true); }}
-                                onClick={() => router.push(node.type === 'math' ? `/app/nodes/math/${node.id}` : `/app/nodes/${node.id}`)}
+                                onEdit={(n) => { setActiveNote(n); setIsEditOpen(true); }}
+                                onDelete={(n) => { setActiveNote(n); setIsDeleteOpen(true); }}
+                                onClick={() => router.push(node.type === 'math' ? `/app/notes/math/${node.id}` : `/app/notes/${node.id}`)}
                             />
                         ))}
 
@@ -140,12 +91,12 @@ const page = () => {
                                 <div className="flex items-start justify-between">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center transition-transform">
                                                 <Plus className="w-4 h-4 text-primary" />
                                             </div>
                                             <h4 className="text-lg font-bold text-zinc-300 group-hover:text-primary transition-colors">Start Project</h4>
                                         </div>
-                                        <p className="text-xs text-zinc-500 leading-relaxed font-medium">Initialize a new subject node.</p>
+                                        <p className="text-xs text-zinc-500 leading-relaxed font-medium">Initialize a new subject note.</p>
                                     </div>
                                     <ArrowUpRight className="w-4 h-4 text-zinc-600 group-hover:text-primary transition-colors" />
                                 </div>
@@ -172,18 +123,20 @@ const page = () => {
             <CreateNotesModal 
                 isOpen={isCreateOpen} 
                 onOpenChange={setIsCreateOpen} 
+                notes={notes}
                 onConfirm={handleCreateConfirm} 
             />
 
             <EditNotesModal 
-                node={activeNode} 
+                node={activeNote} 
                 isOpen={isEditOpen} 
                 onOpenChange={setIsEditOpen} 
                 onConfirm={handleEditConfirm} 
+                notes={notes}
             />
 
             <DeleteNotesModal 
-                node={activeNode} 
+                node={activeNote} 
                 isOpen={isDeleteOpen} 
                 onOpenChange={setIsDeleteOpen} 
                 onConfirm={handleDeleteConfirm} 
