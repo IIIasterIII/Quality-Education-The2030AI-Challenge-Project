@@ -27,3 +27,17 @@ async def upload_file_to_s3(file: UploadFile, folder: str = "roadmaps") -> str:
             ContentType=file.content_type,
         )
         return f"{AWS_S3_DOMEN}/{file_key}"
+
+async def delete_file_from_s3(url: str):
+    if not url or AWS_S3_DOMEN not in url: return
+    file_key = url.replace(f"{AWS_S3_DOMEN}/", "")
+    async with session.client(
+        "s3",
+        region_name=AWS_REGION,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    ) as s3:
+        try:
+            await s3.delete_object(Bucket=AWS_BUCKET_NAME, Key=file_key)
+        except Exception as e:
+            print(f"S3 Delete Error: {e}")

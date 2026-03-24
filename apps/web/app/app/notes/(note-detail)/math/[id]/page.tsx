@@ -60,14 +60,9 @@ const MathSubjectNodePage = () => {
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             TextStyle, Color, Anchor
         ],
-        content: `<h1>Mathematical Laboratory: ${id}</h1><p>Here you can combine deep theoretical notes with interactive 2D and 3D visualizations. Use the <b>Pi</b> icon in the floating menu to launch the workbench.</p>`,
         onUpdate: ({ editor }) => {
-            console.log("[EDITOR] Writing/Typing:", editor.getText());
-
             if (saveTimer.current) clearTimeout(saveTimer.current)
-            saveTimer.current = setTimeout(() => {
-                handleSave()
-            }, 5000)
+            saveTimer.current = setTimeout(() => { handleSave() }, 5000)
 
             const seen = new Set<string>()
             const list: any[] = []

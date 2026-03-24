@@ -86,7 +86,6 @@ const SubNoteDetailPage = () => {
             })
             setAnchors(uniqueAnchors)
         },
-        content: `<h1>Sub Note Detail</h1><p>Part of node: ${id}</p>`,
         editorProps: {
             attributes: { class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed selection:bg-primary/20' },
             handleDrop: (_, event) => { if (event.dataTransfer?.files?.[0]) { handleFile(event.dataTransfer.files[0]); return true } return false },

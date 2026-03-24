@@ -1,12 +1,12 @@
 "use client"
+import { NoteNote } from "@/app/app/notes/types";
 import { GitBranch, Pencil, Trash2 } from "lucide-react"
-import { NoteNode } from "@/app/app/notes/types"
 import React from 'react'
 
 interface NotesCardProps {
-    node: NoteNode;
-    onEdit: (node: NoteNode) => void;
-    onDelete: (node: NoteNode) => void;
+    node: NoteNote;
+    onEdit: (node: NoteNote) => void;
+    onDelete: (node: NoteNote) => void;
     onClick: () => void;
 }
 
@@ -45,7 +45,7 @@ export const NotesCard = ({ node, onEdit, onDelete, onClick }: NotesCardProps) =
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
                             <GitBranch className="w-3.5 h-3.5 text-zinc-700" />
-                            <span>{node.nodesCount}</span>
+                            <span>{node.notesCount}</span>
                         </div>
                         <div className="px-2 py-0.5 rounded-md bg-zinc-950 border border-zinc-800 text-[9px] font-black uppercase text-zinc-500">
                             {node.type || 'normal'}

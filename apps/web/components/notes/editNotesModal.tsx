@@ -31,7 +31,7 @@ export const EditNotesModal = ({ node, isOpen, onOpenChange, onConfirm, notes }:
     useEffect(() => {
         if (node) {
             setTitle(node.title)
-            setDesc(node.preview)
+            setDesc(node.preview as string)
             setColor(node.accentColor)
         }
     }, [node])

@@ -14,7 +14,6 @@ const NoteContext = createContext<NoteContextType | undefined>(undefined)
 export const NoteProvider = ({ children }: { children: ReactNode }) => {
     const [subNodes, setSubNodes] = useState<SubNode[]>([])
     const [isAddingSub, setIsAddingSub] = useState(false)
-
     return (
         <NoteContext.Provider value={{ subNodes, setSubNodes, isAddingSub, setIsAddingSub }}>
             {children}

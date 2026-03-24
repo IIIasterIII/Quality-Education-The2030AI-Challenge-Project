@@ -1,9 +1,9 @@
 "use client"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { useToast } from '@/components/toast'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import { KnowledgeGraph } from '@/components/graph/KnowledgeGraph'
 import { SubjectDetails } from '@/components/graph/SubjectDetails'
 import { SubjectDirectory } from '@/components/graph/SubjectDirectory'

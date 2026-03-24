@@ -99,11 +99,9 @@ const SubjectNodePage = () => {
             })
             setAnchors(uniqueAnchors)
         },
-        content: `<h1>Brain Node: ${id}</h1><p>Capture your thoughts with real-time Markdown conversion.
-        Type # followed by a space to create a heading, or - for a list entry.</p>`,
         editorProps: {
             attributes: {
-                class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed selection:bg-primary/20',
+                class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed selection:bg-primary/20 pb-20 ',
             },
             handleDrop: (_, event) => {
                 if (event.dataTransfer?.files?.[0]) {

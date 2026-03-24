@@ -1,5 +1,5 @@
-from pydantic import BaseModel
 from typing import List, Optional, Any
+from pydantic import BaseModel
 
 class NodeDataSchema(BaseModel):
     label: str

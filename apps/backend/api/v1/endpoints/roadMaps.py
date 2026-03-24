@@ -8,7 +8,6 @@ from utils.s3 import upload_file_to_s3
 from schemas.roadmap import SaveRoadmapRequest, RoadmapResponse
 
 load_dotenv()
-
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
 
 @router.post("/create")
@@ -20,12 +19,7 @@ async def create_roadmap(
     current_user: User = Depends(get_current_user)
 ):
     image_url = await upload_file_to_s3(image)
-    new_roadmap = RoadMap(
-        title=title,
-        description=description,
-        image_url=image_url,
-        user_id=current_user.id
-    )
+    new_roadmap = RoadMap(title=title, description=description, image_url=image_url, user_id=current_user.id)
     db.add(new_roadmap)
     db.commit()
     db.refresh(new_roadmap)

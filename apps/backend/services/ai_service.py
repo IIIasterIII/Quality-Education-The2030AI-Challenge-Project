@@ -1,21 +1,15 @@
-import os
-import json
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from fastapi.responses import StreamingResponse
+import json
+import os
 
 load_dotenv()
-
-client = AsyncOpenAI(
-    api_key=os.getenv("FEATHERLESS_API_KEY"),
-    base_url=os.getenv("FEATHERLESS_BASE_URL")
-)
+client = AsyncOpenAI( api_key=os.getenv("FEATHERLESS_API_KEY"), base_url=os.getenv("FEATHERLESS_BASE_URL") )
 
 async def generate_roadmap_content(topic: str, existing_nodes: list = None, existing_edges: list = None):
     nodes_info = [{"id": n['id'], "label": n['data']['label']} for n in existing_nodes] if existing_nodes else []
-
     prompt = f"""
-
     SYSTEM: You are a professional architect. Output valid JSON delta.
     CURRENT NODES: {json.dumps(nodes_info, ensure_ascii=False)}
     TASK: Execute: '{topic}'. 
@@ -28,7 +22,6 @@ async def generate_roadmap_content(topic: str, existing_nodes: list = None, exis
          "edges": [ {{ "id": "edge_123", "source": "existing_id", "target": "node_827" }} ] }}
     5. POSITIONING: Y starts at 200+ or below last node. Gap 200px.
     """
-
     try:
         response = await client.chat.completions.create(
             model="failspy/Meta-Llama-3-8B-Instruct-abliterated-v3",
@@ -39,17 +32,12 @@ async def generate_roadmap_content(topic: str, existing_nodes: list = None, exis
             response_format={ "type": "json_object" },
             stream=True 
         )
-
-        
         async def event_generator():
             async for chunk in response:
                 if chunk.choices and chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
-                    # Отправляем чистый текст. Фронтенд должен его собирать.
                     yield content 
-
         return StreamingResponse(event_generator(), media_type="text/plain")
-
     except Exception as e:
         print(f"AI Error: {e}")
         raise e

@@ -20,7 +20,7 @@ import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
 import { MathWorkbench } from "@/components/knowledge-node/MathWorkbench"
 import { Mark, mergeAttributes } from '@tiptap/core'
-import { Anchor as AnchorIcon, Cloud, CloudOff, Loader2 } from "lucide-react"
+import { Anchor, Cloud, Loader2 } from "lucide-react"
 import { editSubNote, getSingleSubNote, uploadNoteImage } from "@/app/api/notes"
 import { compressImage, MAX_FILE_SIZE } from "@/app/utils/image"
 
@@ -77,7 +77,6 @@ const MathSubNoteDetailPage = () => {
             })
             setAnchors(list)
         },
-        content: `<h1>Math Analysis</h1><p>Sub-node of: ${id}</p>`,
         editorProps: {
             attributes: { class: 'prose prose-invert max-w-none focus:outline-none min-h-[80vh] text-2xl leading-relaxed' },
             handleDrop: (_, e) => { if (e.dataTransfer?.files?.[0]) { handleFile(e.dataTransfer.files[0]); return true } return false },

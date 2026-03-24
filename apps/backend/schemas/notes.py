@@ -1,5 +1,5 @@
-from pydantic import BaseModel
 from typing import List, Optional, Any
+from pydantic import BaseModel
 from datetime import datetime
 
 class Note(BaseModel):
@@ -38,4 +38,8 @@ class SubNote(BaseModel):
 
 class SubNoteToCreate(BaseModel):
     title: str
+    content: Optional[Any] = None
+
+class SubNoteToEdit(BaseModel):
+    title: Optional[str] = None
     content: Optional[Any] = None

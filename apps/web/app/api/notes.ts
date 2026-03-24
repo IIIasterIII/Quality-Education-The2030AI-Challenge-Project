@@ -109,12 +109,13 @@ export async function createNewSubNote(page_id: string, title: string, content?:
 }
 
 export async function editSubNote(page_id: string, subnote_id: string, title?: string, content?: any) {
+    const data = { title, content }
     try {
         const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes/${subnote_id}`, {
             method: "PATCH",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, content }),
+            body: JSON.stringify(data),
         })
         if (!response.ok) return null
         return await response.json()
@@ -151,5 +152,18 @@ export async function getSubNotes(page_id: string) {
     } catch (err) {
         console.log("Error getting subnotes", err)
         return null
+    }
+}
+
+export async function deleteSubNote(page_id: string, subnote_id: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes/${subnote_id}`, {
+            method: "DELETE",
+            credentials: "include",
+        })
+        return response.ok
+    } catch (err) {
+        console.log("Error deleting subnote", err)
+        return false
     }
 }

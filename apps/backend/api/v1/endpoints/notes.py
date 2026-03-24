@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File
 from schemas.notes import *
 from db.models import User, Notes, SubNotes
-from utils.utils import get_current_user, get_db
-from utils.s3 import upload_file_to_s3
+from utils.utils import get_current_user, get_db, extract_image_urls
+from utils.s3 import upload_file_to_s3, delete_file_from_s3
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/notes", tags=["notes"])
@@ -16,40 +16,44 @@ def get_notes(db: Session = Depends(get_db), current_user: User = Depends(get_cu
 def create_note(data: NoteToCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if db.query(Notes).filter(Notes.user_id == current_user.id, Notes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Note with this title already exists")
-    new_note = Notes(
-        user_id=current_user.id,
-        title=data.title,
-        preview=data.preview,
-        accentColor=data.accentColor,
-        type=data.type
-    )
+    new_note = Notes(user_id=current_user.id, title=data.title, preview=data.preview, accentColor=data.accentColor, type=data.type)
     db.add(new_note)
     db.commit()
     db.refresh(new_note)
     return new_note
 
 @router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
-def delete_note(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def delete_note(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     note = db.query(Notes).filter(Notes.id == id, Notes.user_id == current_user.id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
+    urls = extract_image_urls(note.content)
+    for sub in note.subnotes:
+        urls.extend(extract_image_urls(sub.content))
+    for url in set(urls):
+        await delete_file_from_s3(url)
     db.delete(note)
     db.commit()
     return
 
 @router.patch('/', response_model=Note)
-def update_note(id: int, data: NoteToEdit, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def update_note(id: int, data: NoteToEdit, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     note = db.query(Notes).filter(Notes.id == id, Notes.user_id == current_user.id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
     if data.title and db.query(Notes).filter(Notes.id != id, Notes.user_id == current_user.id, Notes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Note with this title already exists")
+    if data.content is not None:
+        old_urls = set(extract_image_urls(note.content))
+        new_urls = set(extract_image_urls(data.content))
+        removed_urls = old_urls - new_urls
+        for url in removed_urls:
+            await delete_file_from_s3(url)
+        note.content = data.content
     if data.title:
         note.title = data.title
     if data.preview:
         note.preview = data.preview
-    if data.content is not None:
-        note.content = data.content
     if data.accentColor:
         note.accentColor = data.accentColor
     db.commit()
@@ -64,17 +68,14 @@ def get_note(id: int, db: Session = Depends(get_db), current_user: User = Depend
     return note
 
 @router.post("/upload")
-async def upload_note_image(
-    file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
-):
+async def upload_note_image( file: UploadFile = File(...), current_user: User = Depends(get_current_user) ):
     url = await upload_file_to_s3(file, folder="notes")
     return {"url": url}
 
 @router.post("/{page_id}/subnotes", response_model=SubNote)
 def create_subnote(
     page_id: int,
-    data: SubNoteToCreate,
+    data: SubNoteToCreate, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -83,11 +84,33 @@ def create_subnote(
         raise HTTPException(status_code=404, detail="Note not found")
     if db.query(SubNotes).filter(SubNotes.note_id == page_id, SubNotes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Subnote with this title already exists")
-    new_subnote = SubNotes( note_id=page_id, title=data.title, content=data.content )
+    new_subnote = SubNotes(note_id=page_id, title=data.title, content=data.content)
+    note.notesCount += 1
     db.add(new_subnote)
     db.commit()
     db.refresh(new_subnote)
     return new_subnote
+
+@router.delete("/{page_id}/subnotes/{subnote_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subnote(
+    page_id: int,
+    subnote_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    note = db.query(Notes).filter(Notes.id == page_id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    subnote = db.query(SubNotes).filter(SubNotes.id == subnote_id, SubNotes.note_id == page_id).first()
+    if not subnote:
+        raise HTTPException(status_code=404, detail="Subnote not found")
+    urls = extract_image_urls(subnote.content)
+    for url in urls:
+        await delete_file_from_s3(url)
+    note.notesCount -= 1
+    db.delete(subnote)
+    db.commit()
+    return
 
 @router.get("/{page_id}/subnotes", response_model=list[SubNote])
 def get_subnotes(page_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -108,17 +131,22 @@ def get_subnote(page_id: int, subnote_id: int, db: Session = Depends(get_db), cu
     return subnote
 
 @router.patch("/{page_id}/subnotes/{subnote_id}", response_model=SubNote)
-def update_subnote(page_id: int, subnote_id: int, data: SubNoteToCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def update_subnote(page_id: int, subnote_id: int, data: SubNoteToEdit, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     note = db.query(Notes).filter(Notes.id == page_id, Notes.user_id == current_user.id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
     subnote = db.query(SubNotes).filter(SubNotes.id == subnote_id, SubNotes.note_id == page_id).first()
     if not subnote:
         raise HTTPException(status_code=404, detail="Subnote not found")
+    if data.content is not None:
+        old_urls = set(extract_image_urls(subnote.content))
+        new_urls = set(extract_image_urls(data.content))
+        removed_urls = old_urls - new_urls
+        for url in removed_urls:
+            await delete_file_from_s3(url)
+        subnote.content = data.content
     if data.title:
         subnote.title = data.title
-    if data.content is not None:
-        subnote.content = data.content
     db.commit()
     db.refresh(subnote)
     return subnote
