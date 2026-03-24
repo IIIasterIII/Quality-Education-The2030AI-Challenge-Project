@@ -1,15 +1,18 @@
 export interface NoteNote {
     id: string | number;
     title: string;
-    preview: string;
-    notesCount: number;
-    updatedAt: string;
+    preview?: string;
+    notesCount?: number;
+    updatedAt?: string;
     accentColor: string;
     type: 'normal' | 'math';
+    content?: any;
 }
 
 export interface NoteToCreate extends Omit<NoteNote, 'id' | 'updatedAt' | 'notesCount'> {}    
-export interface NoteToEdit extends Omit<NoteToCreate, 'type'> {}
+export interface NoteToEdit extends Partial<Omit<NoteNote, 'id' | 'updatedAt' | 'notesCount' | 'type'>> {
+    content?: any;
+}
 
 export const COLORS = [
     { name: 'Blue', value: '#3b82f6' },

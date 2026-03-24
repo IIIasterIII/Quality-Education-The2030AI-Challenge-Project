@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -18,9 +18,10 @@ import { Color } from '@tiptap/extension-color'
 import { useNote } from "@/context/NoteContext"
 import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
-import { SubNode } from "@/components/knowledge-node/types"
 import { Mark, mergeAttributes } from '@tiptap/core'
-import { Anchor as AnchorIcon } from "lucide-react"
+import { Anchor as AnchorIcon, Cloud, CloudOff, Loader2 } from "lucide-react"
+import { editNote, getSingleNote, uploadNoteImage } from "@/app/api/notes"
+import { compressImage, MAX_FILE_SIZE } from "@/app/utils/image"
 
 const SubjectNodePage = () => {
     const params = useParams()
@@ -33,17 +34,6 @@ const SubjectNodePage = () => {
     const [imgAlign, setImgAlign] = useState<'left' | 'center' | 'right'>('center')
     const [localSliderScale, setLocalSliderScale] = useState(1)
     const [anchors, setAnchors] = useState<{ id: string, text: string }[]>([])
-
-    const handleFile = (file: File) => {
-        if (!file.type.startsWith('image/')) return
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            const result = e.target?.result as string
-            setImgUrl(result)
-            setWizardOpen(true)
-        }
-        reader.readAsDataURL(file)
-    }
 
     const Anchor = Mark.create({
         name: 'anchor',
@@ -90,6 +80,12 @@ const SubjectNodePage = () => {
         ],
         onUpdate: ({ editor }) => {
             console.log("[EDITOR] Writing/Typing:", editor.getText());
+            
+            if (saveTimer.current) clearTimeout(saveTimer.current)
+            saveTimer.current = setTimeout(() => {
+                handleSave()
+            }, 5000)
+
             const seen = new Set<string>()
             const uniqueAnchors: { id: string, text: string }[] = []
             
@@ -135,6 +131,110 @@ const SubjectNodePage = () => {
             }
         },
     })
+
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+    const lastSavedContent = useRef<string>("")
+    const saveTimer = useRef<NodeJS.Timeout | null>(null)
+
+    const handleSave = useCallback(async () => {
+        if (!editor || !id) return
+        const currentContent = JSON.stringify(editor.getJSON())
+        if (currentContent === lastSavedContent.current) return
+
+        setSaveStatus('saving')
+        try {
+            const res = await editNote(parseInt(id), { content: editor.getJSON() })
+            if (res) {
+                lastSavedContent.current = currentContent
+                setSaveStatus('saved')
+                setTimeout(() => setSaveStatus('idle'), 2000)
+            } else {
+                setSaveStatus('error')
+            }
+        } catch (err) {
+            setSaveStatus('error')
+        }
+    }, [editor, id])
+
+    useEffect(() => {
+        const fetchNote = async () => {
+            if (!id) return
+            const note = await getSingleNote(id)
+            if (note?.content && editor) {
+                editor.commands.setContent(note.content)
+                lastSavedContent.current = JSON.stringify(note.content)
+            }
+        }
+        fetchNote()
+    }, [id, editor])
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault()
+                handleSave()
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [handleSave])
+
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            const currentContent = editor ? JSON.stringify(editor.getJSON()) : ""
+            if (saveStatus === 'saving' || currentContent !== lastSavedContent.current) {
+                e.preventDefault()
+                e.returnValue = ''
+            }
+        }
+        
+        const handleInternalNavigation = (e: MouseEvent) => {
+            const target = (e.target as HTMLElement).closest('a')
+            if (target && target instanceof HTMLAnchorElement) {
+                const href = target.getAttribute('href')
+                const currentContent = editor ? JSON.stringify(editor.getJSON()) : ""
+                const isDirty = saveStatus === 'saving' || currentContent !== lastSavedContent.current
+                
+                if (isDirty && href && (href.startsWith('/') || href.startsWith(window.location.origin))) {
+                    if (!window.confirm("You have unsaved changes. Are you sure you want to leave?")) {
+                        e.preventDefault()
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        document.addEventListener('click', handleInternalNavigation, { capture: true })
+        
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload)
+            document.removeEventListener('click', handleInternalNavigation, { capture: true })
+        }
+    }, [saveStatus, editor])
+
+    const handleFile = async (file: File) => {
+        if (!file.type.startsWith('image/')) return
+        
+        if (file.size > MAX_FILE_SIZE) {
+            alert("This file is too big! Maximum size is 5MB.")
+            return
+        }
+
+        setSaveStatus('saving')
+        try {
+            const compressed = file.size > 1024 * 1024 ? await compressImage(file) : file
+            const res = await uploadNoteImage(compressed)
+            if (res?.url) {
+                setImgUrl(res.url)
+                setWizardOpen(true)
+                setSaveStatus('idle')
+            } else {
+                setSaveStatus('error')
+            }
+        } catch (err) {
+            setSaveStatus('error')
+        }
+    }
 
     const handleInsertImageFinal = () => {
         if (!imgUrl) return
@@ -223,6 +323,32 @@ const SubjectNodePage = () => {
 
     return (
         <main className="flex-1 flex bg-[#050505] overflow-hidden relative">
+                <div className="absolute top-6 right-10 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/50 backdrop-blur-md border border-white/5 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                    {saveStatus === 'saving' && (
+                        <>
+                            <Loader2 className="w-3 h-3 animate-spin text-primary" />
+                            <span>Saving...</span>
+                        </>
+                    )}
+                    {saveStatus === 'saved' && (
+                        <>
+                            <Cloud className="w-3 h-3 text-emerald-500" />
+                            <span className="text-emerald-500">Saved</span>
+                        </>
+                    )}
+                    {saveStatus === 'idle' && (
+                        <>
+                            <Cloud className="w-3 h-3 opacity-20" />
+                            <span>Cloud Synced</span>
+                        </>
+                    )}
+                    {saveStatus === 'error' && (
+                        <>
+                            <CloudOff className="w-3 h-3 text-red-500" />
+                            <span className="text-red-500">Save Error</span>
+                        </>
+                    )}
+                </div>
                 
                 {anchors.length > 0 && (
                     <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">

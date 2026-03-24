@@ -70,6 +70,7 @@ class Notes(Base):
     updatedAt = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     accentColor = Column(String(255), nullable=False)
     type = Column(String(50), nullable=False)
+    content = Column(JSON, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     user = relationship("User", back_populates="notes")
     subnotes = relationship("SubNotes", back_populates="note", cascade="all, delete-orphan")
@@ -78,5 +79,6 @@ class SubNotes(Base):
     __tablename__ = "subNotes"
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
+    content = Column(JSON, nullable=True)
     note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
     note = relationship("Notes", back_populates="subnotes")

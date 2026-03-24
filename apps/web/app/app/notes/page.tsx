@@ -50,7 +50,7 @@ const page = () => {
 
     const filteredNotes = notes.filter(n => 
         n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.preview.toLowerCase().includes(searchQuery.toLowerCase())
+        n.preview?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     return (
@@ -66,7 +66,7 @@ const page = () => {
                     />
                     <div className="text-sm font-bold text-zinc-500 flex items-center gap-3">
                         <Binary className="w-5 h-5 text-primary opacity-60" />
-                        <span>Notes captured: {notes.reduce((acc, curr) => acc + curr.notesCount, 0)}</span>
+                        <span>Notes captured: {notes.reduce((acc, curr) => acc + (curr?.notesCount || 0), 0)}</span>
                     </div>
                 </div>
 

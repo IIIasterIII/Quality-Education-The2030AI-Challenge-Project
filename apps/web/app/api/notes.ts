@@ -16,6 +16,20 @@ export async function getNotes() {
     }
 }
 
+export async function getSingleNote(id: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${id}`, {
+            method: "GET",
+            credentials: "include",
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (err) {
+        console.log("Error getting note", err)
+        return null
+    }
+}
+
 export async function createNewNote(data: NoteToCreate) {
     try {
         const response = await fetch(`${BACKEND_URL}/notes`, {
@@ -78,18 +92,49 @@ export async function uploadNoteImage(file: File) {
     }
 }
 
-export async function createNewSubNote(page_id: string, title: string) {
+export async function createNewSubNote(page_id: string, title: string, content?: any) {
     try {
         const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes`, {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title }),
+            body: JSON.stringify({ title, content }),
         })
         if (!response.ok) return null
         return await response.json()
     } catch (err) {
         console.log("Error creating subnote", err)
+        return null
+    }
+}
+
+export async function editSubNote(page_id: string, subnote_id: string, title?: string, content?: any) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes/${subnote_id}`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, content }),
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (err) {
+        console.log("Error editing subnote", err)
+        return null
+    }
+}
+
+export async function getSingleSubNote(page_id: string, subnote_id: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes/${subnote_id}`, {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (err) {
+        console.log("Error getting subnote", err)
         return null
     }
 }

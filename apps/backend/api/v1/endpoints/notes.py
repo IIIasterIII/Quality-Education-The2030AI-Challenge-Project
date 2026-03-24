@@ -42,16 +42,25 @@ def update_note(id: int, data: NoteToEdit, db: Session = Depends(get_db), curren
     note = db.query(Notes).filter(Notes.id == id, Notes.user_id == current_user.id).first()
     if not note:
         raise HTTPException(status_code=404, detail="Note not found")
-    if db.query(Notes).filter(Notes.id != id, Notes.user_id == current_user.id, Notes.title == data.title).first():
+    if data.title and db.query(Notes).filter(Notes.id != id, Notes.user_id == current_user.id, Notes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Note with this title already exists")
     if data.title:
         note.title = data.title
     if data.preview:
         note.preview = data.preview
+    if data.content is not None:
+        note.content = data.content
     if data.accentColor:
         note.accentColor = data.accentColor
     db.commit()
     db.refresh(note)
+    return note
+
+@router.get("/{id}", response_model=Note)
+def get_note(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    note = db.query(Notes).filter(Notes.id == id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
     return note
 
 @router.post("/upload")
@@ -74,7 +83,7 @@ def create_subnote(
         raise HTTPException(status_code=404, detail="Note not found")
     if db.query(SubNotes).filter(SubNotes.note_id == page_id, SubNotes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Subnote with this title already exists")
-    new_subnote = SubNotes( note_id=page_id, title=data.title )
+    new_subnote = SubNotes( note_id=page_id, title=data.title, content=data.content )
     db.add(new_subnote)
     db.commit()
     db.refresh(new_subnote)
@@ -87,3 +96,29 @@ def get_subnotes(page_id: int, db: Session = Depends(get_db), current_user: User
         raise HTTPException(status_code=404, detail="Note not found")
     subnotes = db.query(SubNotes).filter(SubNotes.note_id == page_id).all()
     return subnotes
+
+@router.get("/{page_id}/subnotes/{subnote_id}", response_model=SubNote)
+def get_subnote(page_id: int, subnote_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    note = db.query(Notes).filter(Notes.id == page_id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    subnote = db.query(SubNotes).filter(SubNotes.id == subnote_id, SubNotes.note_id == page_id).first()
+    if not subnote:
+        raise HTTPException(status_code=404, detail="Subnote not found")
+    return subnote
+
+@router.patch("/{page_id}/subnotes/{subnote_id}", response_model=SubNote)
+def update_subnote(page_id: int, subnote_id: int, data: SubNoteToCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    note = db.query(Notes).filter(Notes.id == page_id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    subnote = db.query(SubNotes).filter(SubNotes.id == subnote_id, SubNotes.note_id == page_id).first()
+    if not subnote:
+        raise HTTPException(status_code=404, detail="Subnote not found")
+    if data.title:
+        subnote.title = data.title
+    if data.content is not None:
+        subnote.content = data.content
+    db.commit()
+    db.refresh(subnote)
+    return subnote

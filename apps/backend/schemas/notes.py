@@ -10,6 +10,7 @@ class Note(BaseModel):
     updatedAt: datetime
     accentColor: str
     type: str
+    content: Optional[Any] = None
     
     class Config:
         from_attributes = True
@@ -19,18 +20,22 @@ class NoteToCreate(BaseModel):
     preview: Optional[str] = None
     accentColor: str
     type: str
+    content: Optional[Any] = None
 
 class NoteToEdit(BaseModel):
     title: Optional[str] = None
     preview: Optional[str] = None
-    accentColor: Optional[str]
+    accentColor: Optional[str] = None
+    content: Optional[Any] = None
 
 class SubNote(BaseModel):
     id: int
     title: str
+    content: Optional[Any] = None
     
     class Config:
         from_attributes = True
 
 class SubNoteToCreate(BaseModel):
     title: str
+    content: Optional[Any] = None
