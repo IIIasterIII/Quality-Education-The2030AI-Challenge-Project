@@ -22,6 +22,15 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
     groupColors,
     handleNodeClick
 }) => {
+    React.useEffect(() => {
+        if (graphRef.current) {
+            const sim = graphRef.current;
+            sim.d3Force('charge').strength(-300); 
+            sim.d3Force('link').distance(60);
+            sim.d3ReheatSimulation();
+        }
+    }, [filteredData, graphRef]);
+
     return (
         <ForceGraph2D
             ref={graphRef}
@@ -45,6 +54,7 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
             d3AlphaDecay={0.015}
             d3VelocityDecay={0.3}
             onNodeClick={handleNodeClick}
+            warmupTicks={100}
             nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                 const n = node as any;
                 const isSelected = selectedNode?.id === n.id;

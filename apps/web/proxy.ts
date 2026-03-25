@@ -17,12 +17,12 @@ export function proxy(request: NextRequest) {
   }
 
   if (isAuthPage && token) {
-    return NextResponse.redirect(new URL('/app/roadmaps', request.url))
+    return NextResponse.redirect(new URL('/app', request.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/app/:path*', '/auth'],
+  matcher: ['/app', '/app/:path*', '/auth'],
 }

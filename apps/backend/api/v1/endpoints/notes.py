@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status, HTTPException, UploadFile, File
 from schemas.notes import *
-from db.models import User, Notes, SubNotes
+from db.models import User, Notes, SubNotes, note_links
 from utils.utils import get_current_user, get_db, extract_image_urls
 from utils.s3 import upload_file_to_s3, delete_file_from_s3
 from sqlalchemy.orm import Session
@@ -10,14 +10,28 @@ router = APIRouter(prefix="/notes", tags=["notes"])
 @router.get("/", response_model=list[Note])
 def get_notes(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     notes = db.query(Notes).filter(Notes.user_id == current_user.id).all()
+    if not notes:
+        return []
     return notes
 
 @router.post("/", response_model=Note)
 def create_note(data: NoteToCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if db.query(Notes).filter(Notes.user_id == current_user.id, Notes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Note with this title already exists")
-    new_note = Notes(user_id=current_user.id, title=data.title, preview=data.preview, accentColor=data.accentColor, type=data.type)
+    new_note = Notes(
+        user_id=current_user.id, 
+        title=data.title, 
+        preview=data.preview, 
+        accentColor=data.accentColor, 
+        type=data.type
+    )
     db.add(new_note)
+    db.flush() 
+    user_notes = db.query(Notes).filter(Notes.user_id == current_user.id, Notes.id != new_note.id).all()
+    new_note.related_notes = user_notes
+    for note in user_notes:
+        if new_note not in note.related_notes:
+            note.related_notes.append(new_note)
     db.commit()
     db.refresh(new_note)
     return new_note
@@ -59,6 +73,35 @@ async def update_note(id: int, data: NoteToEdit, db: Session = Depends(get_db), 
     db.commit()
     db.refresh(note)
     return note
+
+from sqlalchemy.orm import selectinload
+
+@router.get("/graph", response_model=list[GraphNote])
+async def get_graph_data(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    notes = (
+        db.query(Notes)
+        .filter(Notes.user_id == current_user.id)
+        .options(selectinload(Notes.subnotes), selectinload(Notes.related_notes))
+        .all()
+    )
+    result = []
+    for note in notes:
+        links = [{"source": note.id, "target": sub.id, "type": "sub"} for sub in note.subnotes]
+        note_to_note_links = [{"source": note.id, "target": related.id, "type": "main"} for related in note.related_notes]
+        all_links = links + note_to_note_links
+        data = {
+            "id": note.id,
+            "title": note.title,
+            "preview": note.preview,
+            "notesCount": note.notesCount,
+            "updatedAt": note.updatedAt,
+            "accentColor": note.accentColor,
+            "type": note.type,
+            "subNotes": note.subnotes,
+            "links": all_links,
+        }
+        result.append(data)
+    return result
 
 @router.get("/{id}", response_model=Note)
 def get_note(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

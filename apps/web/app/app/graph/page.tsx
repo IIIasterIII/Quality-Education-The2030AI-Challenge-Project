@@ -9,7 +9,32 @@ import { SubjectDetails } from '@/components/graph/SubjectDetails'
 import { SubjectDirectory } from '@/components/graph/SubjectDirectory'
 import { GraphLegend } from '@/components/graph/GraphLegend'
 import { Node, GraphData } from '@/components/graph/types'
+import { getGraphData } from '@/app/api/notes'
 
+interface SubNoteData {
+    id: number
+    title: string
+}
+
+interface LinkData {
+    source: number
+    target: number
+    type: string
+}
+
+interface MainGraphData {
+    id: number
+    title: string
+    preview: string | null
+    notesCount: number
+    updatedAt: string
+    accentColor: string
+    type: string
+    subNotes: SubNoteData[]
+    links: LinkData[]
+}
+
+/*
 const GRAPH_DATA_LEVEL_2_MATH: GraphData = {
     nodes: [
         { id: 'math_calc_1', name: 'Calculus I', val: 8, group: 2 },
@@ -120,29 +145,21 @@ const INITIAL_DATA: GraphData = {
         { source: 'db', target: 'cloud' },
     ]
 };
+*/
 
-const groupColors: Record<number, string> = {
-    1: '#3b82f6',
-    2: '#f59e0b',
-    3: '#ef4444',
-    4: '#8b5cf6',
-    5: '#10b981',
-};
 
 const Page = () => {
     const { showToast, ToastComponent } = useToast()
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedNode, setSelectedNode] = useState<Node | null>(null)
     const [mounted, setMounted] = useState(false)
-    const [currentData, setCurrentData] = useState<GraphData>(INITIAL_DATA)
+    const [currentData, setCurrentData] = useState<GraphData | null>()
+    const [graphData, setGraphData] = useState<MainGraphData[]>([])
     const [history, setHistory] = useState<GraphData[]>([])
     const graphRef = useRef<any>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
-    
-    useEffect(() => { 
-        setMounted(true)
-    }, [])
+    useEffect(() => { setMounted(true) }, [])
 
     useEffect(() => {
         if (!mounted || !containerRef.current) return;
@@ -160,7 +177,7 @@ const Page = () => {
 
     const handleNodeClick = (node: Node) => {
         if (node.subGraph) {
-            setHistory(prev => [...prev, currentData])
+            if (currentData) setHistory(prev => [...prev, currentData])
             setCurrentData(node.subGraph)
             setSelectedNode(null);
             setSearchTerm("");
@@ -185,13 +202,13 @@ const Page = () => {
     };
 
     const filteredNodes = useMemo(() => {
-        if (!searchTerm) return currentData.nodes;
+        if (!currentData) return [];
         const term = searchTerm.toLowerCase();
         return currentData.nodes.filter(n => n.name.toLowerCase().includes(term));
     }, [searchTerm, currentData]);
 
     const filteredData = useMemo(() => {
-        if (!searchTerm) return currentData;
+        if (!currentData) return { nodes: [], links: [] };
         const nodeIds = new Set(filteredNodes.map(n => n.id));
         const matchingLinks = currentData.links.filter((l: any) => {
             const s = typeof l.source === 'object' ? l.source.id : l.source;
@@ -200,6 +217,79 @@ const Page = () => {
         });
         return { nodes: filteredNodes, links: matchingLinks };
     }, [filteredNodes, currentData, searchTerm]);
+
+    useEffect(() => {
+        const getGraphDataFunction = async () => {
+            const data = await getGraphData()
+            setGraphData(data || [])
+        }
+        getGraphDataFunction()
+    }, [])
+
+    const groupColors = useMemo(() => {
+        const colors: Record<number, string> = {};
+        graphData.forEach((item, index) => {
+            colors[index + 1] = item.accentColor || '#3b82f6';
+        });
+        return colors;
+    }, [graphData]);
+
+    useEffect(() => {
+        if (!graphData || graphData.length === 0) return;
+
+        const nodes: Node[] = graphData.map((item, index) => ({
+            id: String(item.id),
+            name: item.title,
+            val: Math.max(item.notesCount * 5, 10),
+            group: index + 1,
+            x: (Math.random() - 0.5) * 500,
+            y: (Math.random() - 0.5) * 500,
+            subGraph: item.subNotes && item.subNotes.length > 0 ? {
+                nodes: item.subNotes.map(sub => ({
+                    id: `sub_${sub.id}`,
+                    name: sub.title,
+                    val: 8,
+                    group: index + 1,
+                    x: (Math.random() - 0.5) * 200,
+                    y: (Math.random() - 0.5) * 200,
+                })),
+                links: [
+                    ...item.subNotes.map(sub => ({
+                        source: String(item.id),
+                        target: `sub_${sub.id}`
+                    })),
+                    ...item.subNotes.flatMap((sub, i) => 
+                        item.subNotes.slice(i + 1).map(other => ({
+                            source: `sub_${sub.id}`,
+                            target: `sub_${other.id}`
+                        }))
+                    )
+                ]
+            } : undefined
+        }));
+
+        const allLinksSet = new Set<string>();
+        const links: any[] = [];
+
+        graphData.forEach(item => {
+            if (item.links) {
+                item.links.forEach(link => {
+                    const sourceId = String(link.source);
+                    const targetId = String(link.target);
+                    const key = [sourceId, targetId].sort().join('-');
+                    if (!allLinksSet.has(key)) {
+                        allLinksSet.add(key);
+                        links.push({
+                            source: sourceId,
+                            target: targetId
+                        });
+                    }
+                });
+            }
+        });
+
+        setCurrentData({ nodes, links });
+    }, [graphData]);
 
     if (!mounted) return null;
 
@@ -210,7 +300,6 @@ const Page = () => {
                 <ResizablePanel className="relative overflow-hidden">
                     <div ref={containerRef} className="h-full w-full bg-[#0a0a0a] relative overflow-hidden">
                         <GraphLegend groupColors={groupColors} />
-
                         {history.length > 0 && (
                             <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50">
                                 <Button 

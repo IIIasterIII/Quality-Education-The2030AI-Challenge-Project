@@ -4,14 +4,12 @@ import { useParams } from 'next/navigation'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
-import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import Highlight from '@tiptap/extension-highlight'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import BubbleMenuExtension from '@tiptap/extension-bubble-menu'
 import FloatingMenuExtension from '@tiptap/extension-floating-menu'
-import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
@@ -51,7 +49,10 @@ const SubjectNodePage = () => {
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
-            StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+            StarterKit.configure({ 
+                heading: { levels: [1, 2, 3] },
+                link: { openOnClick: false },
+            }),
             Image.extend({
                 addAttributes() {
                     return {
@@ -63,7 +64,6 @@ const SubjectNodePage = () => {
                     }
                 },
             }).configure({ inline: true, allowBase64: true }),
-            Link.configure({ openOnClick: false }),
             Placeholder.configure({
                 placeholder: 'Start writing your knowledge... Type # for headers, - for lists.',
             }),
@@ -72,7 +72,6 @@ const SubjectNodePage = () => {
             TaskItem.configure({ nested: true }),
             BubbleMenuExtension,
             FloatingMenuExtension,
-            Underline,
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             TextStyle,
             Color,

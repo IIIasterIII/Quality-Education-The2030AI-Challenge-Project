@@ -43,3 +43,26 @@ class SubNoteToCreate(BaseModel):
 class SubNoteToEdit(BaseModel):
     title: Optional[str] = None
     content: Optional[Any] = None
+
+class GraphLink(BaseModel):
+    source: int
+    target: int
+    type: str
+
+class GraphDataSubNote(BaseModel):
+    id: int
+    title: str
+
+class GraphNote(BaseModel):
+    id: int
+    title: str
+    preview: Optional[str] = None
+    notesCount: int
+    updatedAt: datetime
+    accentColor: str
+    type: str
+    subNotes: List[GraphDataSubNote]
+    links: List[GraphLink]
+    
+    class Config:
+        from_attributes = True

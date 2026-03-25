@@ -52,9 +52,7 @@ export const KnowledgeSidebar = ({ subNodes, isAddingSub, setIsAddingSub, setSub
         const success = await deleteSubNote(note_page_id, subnote_id)
         if (success) {
             setSubNodes(prev => prev.filter(n => String(n.id) !== String(subnote_id)))
-            if (note_page_uid === subnote_id) {
-                router.push(`/app/notes/${note_page_id}`)
-            }
+            if (note_page_uid === subnote_id) router.push(`/app/notes/${note_page_id}`)
         }
         setOpenMenuId(null)
     }

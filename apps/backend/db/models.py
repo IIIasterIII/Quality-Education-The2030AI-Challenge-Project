@@ -1,13 +1,20 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, JSON, Text, Float, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, JSON, Text, Float, DateTime, Table
 from datetime import datetime, timezone
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+note_links = Table(
+    "note_links",
+    Base.metadata,
+    Column("parent_id", Integer, ForeignKey("notes.id"), primary_key=True),
+    Column("child_id", Integer, ForeignKey("notes.id"), primary_key=True)
+)
+
 class User(Base):
     __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     firebase_uid = Column(String(100), unique=True, nullable=False) 
     username = Column(String(100))
     email = Column(String(100))
@@ -18,7 +25,7 @@ class User(Base):
 
 class Profile(Base):
     __tablename__ = 'profiles' 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), unique=True)
     saved = Column(Boolean, default=False)
     user = relationship("User", back_populates="profile")    
@@ -73,7 +80,14 @@ class Notes(Base):
     content = Column(JSON, nullable=True)
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     user = relationship("User", back_populates="notes")
-    subnotes = relationship("SubNotes", back_populates="note", cascade="all, delete-orphan")
+    related_notes = relationship(
+        "Notes",
+        secondary=note_links,
+        primaryjoin=(id == note_links.c.parent_id),
+        secondaryjoin=(id == note_links.c.child_id),
+        backref="referenced_by"
+    )
+    subnotes = relationship("SubNotes", back_populates="parent_note", cascade="all, delete-orphan")
 
 class SubNotes(Base):
     __tablename__ = "subNotes"
@@ -81,4 +95,4 @@ class SubNotes(Base):
     title = Column(String(255), nullable=False)
     content = Column(JSON, nullable=True)
     note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
-    note = relationship("Notes", back_populates="subnotes")
+    parent_note = relationship("Notes", back_populates="subnotes")

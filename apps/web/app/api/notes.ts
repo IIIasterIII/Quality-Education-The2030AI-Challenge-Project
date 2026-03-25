@@ -167,3 +167,17 @@ export async function deleteSubNote(page_id: string, subnote_id: string) {
         return false
     }
 }
+
+export async function getGraphData() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/graph`, {
+            method: "GET",
+            credentials: "include",
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (err) {
+        console.log("Error getting graph data", err)
+        return null
+    }
+}
