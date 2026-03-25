@@ -176,6 +176,13 @@ const Page = () => {
     const zoomToFit = () => { if (graphRef.current) setTimeout(() => { graphRef.current.zoomToFit(400, 100) }, 100) }
 
     const handleNodeClick = (node: Node) => {
+        setSelectedNode(node);
+        if (graphRef.current) {
+            graphRef.current.centerAt(node.x, node.y, 500);
+        }
+    };
+
+    const handleDrillDown = (node: Node) => {
         if (node.subGraph) {
             if (currentData) setHistory(prev => [...prev, currentData])
             setCurrentData(node.subGraph)
@@ -183,9 +190,6 @@ const Page = () => {
             setSearchTerm("");
             showToast(`Drilling into: ${node.name}`, 'info');
             zoomToFit();
-        } else {
-            setSelectedNode(node);
-            graphRef.current.centerAt(node.x, node.y, 500);
         }
     };
 
@@ -332,7 +336,7 @@ const Page = () => {
                                 selectedNode={selectedNode}
                                 historyLength={history.length}
                                 setSelectedNode={setSelectedNode}
-                                handleNodeClick={handleNodeClick}
+                                handleNodeClick={handleDrillDown}
                             />
                         ) : (
                             <SubjectDirectory 

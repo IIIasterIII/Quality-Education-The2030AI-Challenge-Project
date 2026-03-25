@@ -17,12 +17,14 @@ import { useNote } from "@/context/NoteContext"
 import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
 import { Mark, mergeAttributes } from '@tiptap/core'
-import { Anchor as AnchorIcon, Cloud, CloudOff, Loader2 } from "lucide-react"
+import { Anchor as AnchorIcon, Cloud, CloudOff, Loader2, Zap } from "lucide-react"
+import { useRouter } from 'next/navigation'
 import { editNote, getSingleNote, uploadNoteImage } from "@/app/api/notes"
 import { compressImage, MAX_FILE_SIZE } from "@/app/utils/image"
 
 const SubjectNodePage = () => {
     const params = useParams()
+    const router = useRouter()
     const id = params.id as string
     const { subNodes, setSubNodes, isAddingSub, setIsAddingSub } = useNote()
     const [wizardOpen, setWizardOpen] = useState(false)
@@ -347,13 +349,24 @@ const SubjectNodePage = () => {
                     )}
                 </div>
                 
-                {anchors.length > 0 && (
-                    <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">
-                        <div className="flex flex-col items-center group-hover:items-start px-3 gap-6">
-                            <div className="flex items-center gap-3 px-1 text-zinc-600">
-                                <AnchorIcon className="w-5 h-5 shrink-0" />
-                                <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:block whitespace-nowrap">Bookmarks</span>
-                            </div>
+                <aside className="w-12 hover:w-64 border-r border-zinc-900 bg-[#050505]/50 backdrop-blur-xl flex flex-col pt-12 transition-all duration-500 group overflow-hidden z-20">
+                    <div className="flex flex-col items-center group-hover:items-start px-3 gap-6">
+                        <div className="flex flex-col gap-4 w-full">
+                            <button 
+                                onClick={() => router.push(`/app/exercise/${id}`)}
+                                className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-primary/20 bg-primary/10 text-primary transition-all overflow-hidden group/btn border border-primary/20"
+                            >
+                                <Zap className="w-5 h-5 shrink-0 animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden group-hover:block whitespace-nowrap">Run Exercise</span>
+                            </button>
+
+                            {anchors.length > 0 && (
+                                <div className="flex items-center gap-3 px-1 text-zinc-600 mt-4">
+                                    <AnchorIcon className="w-5 h-5 shrink-0" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:block whitespace-nowrap">Bookmarks</span>
+                                </div>
+                            )}
+                        </div>
                             
                             <div className="flex flex-col gap-2 w-full">
                                 {anchors.map((anchor) => (
@@ -369,7 +382,6 @@ const SubjectNodePage = () => {
                             </div>
                         </div>
                     </aside>
-                )}
 
                 <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide pt-12 pb-24 px-10">
                     <RichEditor 

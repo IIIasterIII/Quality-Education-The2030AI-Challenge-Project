@@ -41,3 +41,50 @@ async def generate_roadmap_content(topic: str, existing_nodes: list = None, exis
     except Exception as e:
         print(f"AI Error: {e}")
         raise e
+
+async def generate_exercise_content(note_content: str, level: str, type: str):
+    """
+    note_content: JSON/Text from the editor
+    level: "foundational", "advanced", "expert"
+    type: "quiz", "math_problems", "conceptual_questions"
+    """
+    prompt = f"""
+    TASK: Generate a {type} exercise at '{level}' level based on the following content:
+    CONTENT: {note_content}
+    
+    INSTRUCTIONS:
+    1. QUALITY CHECK: If the CONTENT is empty, too short (less than 50 words), or contains no educational substance, you MUST return ONLY this JSON: {{"error": "insufficient_content"}}.
+    2. If QUIZ: Return list of 5 multiple choice questions.
+    2. If MATH: Return 3 advanced problems. Use LaTeX for ALL mathematical formulas and wrap them in double dollar signs (e.g., $$...$$).
+    3. If CONCEPTUAL: Return 3 deep-dive questions.
+    
+    CRITICAL: JSON ESCAPING RULE.
+    In JSON, the backslash (\) is an escape character. YOU MUST write TWO backslashes for all LaTeX (e.g., write "\\\\\\\\frac" instead of "\\\\frac").
+    If you send a single backslash like "\\\\frac", it will be misinterpreted.
+    ALWAYS wrap math in $$...$$. 
+    {{
+      "title": "...",
+      "items": [
+        {{ "question": "...", "options": ["...", "..."], "answer": "...", "explanation": "..." }}
+      ]
+    }}
+    """
+    try:
+        response = await client.chat.completions.create(
+            model="failspy/Meta-Llama-3-8B-Instruct-abliterated-v3",
+            messages=[
+                {"role": "system", "content": "You are an educational AI. Use LaTeX for math. Return valid JSON. BE EXTREMELY CONCISE. DO NOT generate gigantic matrices. Max matrix size is 3x3."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={ "type": "json_object" },
+            max_tokens=2000,
+            stream=True
+        )
+        async def event_generator():
+            async for chunk in response:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        return StreamingResponse(event_generator(), media_type="text/plain")
+    except Exception as e:
+        print(f"Exercise AI Error: {e}")
+        raise e

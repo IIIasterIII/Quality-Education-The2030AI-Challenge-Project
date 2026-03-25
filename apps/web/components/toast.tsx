@@ -35,7 +35,7 @@ const Toast: React.FC<ToastProps> = ({ id, message, type, duration = 5000, onClo
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-500 pointer-events-auto",
+        "flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md animate-in fade-in slide-in-from-right-4 duration-500 pointer-events-auto",
         bgColors[type]
       )}
     >
@@ -64,7 +64,7 @@ export const useToast = () => {
     };
 
     const ToastComponent = (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none">
+        <div className="fixed bottom-6 right-6 z-9999 flex flex-col-reverse gap-3 pointer-events-none items-end">
             {toasts.map(toast => (
                 <div key={toast.id}>
                     <Toast id={toast.id} message={toast.message} type={toast.type} onClose={removeToast} />

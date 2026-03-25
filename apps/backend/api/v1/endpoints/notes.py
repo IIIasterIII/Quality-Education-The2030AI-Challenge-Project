@@ -4,6 +4,7 @@ from db.models import User, Notes, SubNotes, note_links
 from utils.utils import get_current_user, get_db, extract_image_urls
 from utils.s3 import upload_file_to_s3, delete_file_from_s3
 from sqlalchemy.orm import Session
+from services.ai_service import generate_roadmap_content, generate_exercise_content
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -35,6 +36,30 @@ def create_note(data: NoteToCreate, db: Session = Depends(get_db), current_user:
     db.commit()
     db.refresh(new_note)
     return new_note
+
+@router.post("/{note_id}/generate-exercise")
+async def generate_exercise(
+    note_id: int,
+    level: str = "foundational",
+    type: str = "quiz",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    note = db.query(Notes).filter(Notes.id == note_id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    import json
+    content_str = json.dumps(note.content, ensure_ascii=False) if note.content else note.title
+    return await generate_exercise_content(content_str, level, type)
+
+@router.post("/generate-random-exercise")
+async def generate_random_exercise(
+    topic: str,
+    level: str = "foundational",
+    current_user: User = Depends(get_current_user)
+):
+    return await generate_exercise_content(f"Topic: {topic}. Generate random high-quality challenging questions.", level, "quiz")
 
 @router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_note(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

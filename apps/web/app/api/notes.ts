@@ -181,3 +181,49 @@ export async function getGraphData() {
         return null
     }
 }
+
+export async function generateExercise(note_id: string, level: string, type: string, onChunk: (chunk: string) => void) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${note_id}/generate-exercise?level=${level}&type=${type}`, {
+            method: "POST",
+            credentials: "include",
+        })
+        if (!response.ok) return null
+        
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        if (!reader) return null
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            const chunk = decoder.decode(value)
+            onChunk(chunk)
+        }
+    } catch (err) {
+        console.log("Error generating exercise", err)
+    }
+}
+
+export async function generateRandomExercise(topic: string, level: string, onChunk: (chunk: string) => void) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/generate-random-exercise?topic=${encodeURIComponent(topic)}&level=${level}`, {
+            method: "POST",
+            credentials: "include",
+        })
+        if (!response.ok) return null
+        
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        if (!reader) return null
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            const chunk = decoder.decode(value)
+            onChunk(chunk)
+        }
+    } catch (err) {
+        console.log("Error generating random exercise", err)
+    }
+}
