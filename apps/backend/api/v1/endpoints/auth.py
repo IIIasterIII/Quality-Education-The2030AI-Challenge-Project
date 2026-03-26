@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Form
+from fastapi import APIRouter, HTTPException, status, Form, Request
 from db.session import get_db
 from db.models import User, Profile
 from firebase_admin import auth
@@ -18,7 +18,6 @@ init_firebase()
 router = APIRouter(prefix="/auth", tags=["auth"])
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-
 @router.post("/login")
 def login(response: Response, payload: dict, db: Session = Depends(get_db)):
     id_token = payload.get("idToken")

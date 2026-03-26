@@ -14,7 +14,7 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> UserTokenSchema:
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     token = request.cookies.get("session_token")
     if not token:
         raise HTTPException(status_code=401, detail="No session token provided")

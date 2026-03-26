@@ -19,13 +19,7 @@ export async function loginWithGoogle() {
         })
         if (!response.ok) throw new Error('Backend sync failed')
         const data = await response.json()
-        return {
-            id: data.id,
-            firebase_uid: data.firebase_uid,
-            email: data.email,
-            username: data.username,
-            avatar: data.avatar,
-        }
+        return data
     } catch (error) {
         console.error("Login error:", error)
         return null
@@ -52,6 +46,7 @@ export async function getMe() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
         })
+        if (!response.ok) return null
         return await response.json()
     } catch (error) {
         return null

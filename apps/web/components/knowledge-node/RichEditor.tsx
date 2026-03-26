@@ -14,6 +14,8 @@ import {
     Pi
 } from "lucide-react"
 
+import { MathJax } from 'better-react-mathjax'
+
 interface RichEditorProps {
     editor: Editor | null;
     openWizard: () => void;
@@ -182,7 +184,9 @@ export const RichEditor = ({
             </BubbleMenu>
 
             <div className="max-w-5xl mx-auto w-full">
-                <EditorContent editor={editor} />
+                <MathJax dynamic>
+                    <EditorContent editor={editor} />
+                </MathJax>
             </div>
         </>
     )

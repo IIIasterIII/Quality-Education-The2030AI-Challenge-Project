@@ -55,13 +55,12 @@ async def generate_exercise_content(note_content: str, level: str, type: str):
     INSTRUCTIONS:
     1. QUALITY CHECK: If the CONTENT is empty, too short (less than 50 words), or contains no educational substance, you MUST return ONLY this JSON: {{"error": "insufficient_content"}}.
     2. If QUIZ: Return list of 5 multiple choice questions.
-    2. If MATH: Return 3 advanced problems. Use LaTeX for ALL mathematical formulas and wrap them in double dollar signs (e.g., $$...$$).
-    3. If CONCEPTUAL: Return 3 deep-dive questions.
+    3. If MATH: Return 3 advanced problems. Use LaTeX for ALL mathematical formulas and wrap them in custom MathJax delimiters (e.g., $...$ or $$...$$).
+       CRITICAL: MATH VERIFICATION. For every math problem, you MUST internally simulate writing a Python script to solve the problem before generating the final answer. Ensure the result is 100% accurate. Prove the logic in the "explanation" field.
+    4. If CONCEPTUAL: Return 10 deep-dive questions.
     
     CRITICAL: JSON ESCAPING RULE.
-    In JSON, the backslash (\) is an escape character. YOU MUST write TWO backslashes for all LaTeX (e.g., write "\\\\\\\\frac" instead of "\\\\frac").
-    If you send a single backslash like "\\\\frac", it will be misinterpreted.
-    ALWAYS wrap math in $$...$$. 
+    Since we are using custom repair, strictly follow standard JSON. DO NOT over-escape.
     {{
       "title": "...",
       "items": [

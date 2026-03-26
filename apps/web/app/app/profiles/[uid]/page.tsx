@@ -7,16 +7,19 @@ import { Input } from '@workspace/ui/components/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@workspace/ui/components/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@workspace/ui/components/avatar'
 import { getUserProfile, updateMyProfile, uploadAvatar } from '@/app/api/users'
-import { Camera, Loader2 } from 'lucide-react'
+import { logoutFromBackend } from '@/app/api/router'
+import { Camera, Loader2, LogOut } from 'lucide-react'
 import { useToast } from '@/components/toast'
-import { useAppDispatch } from '@/app/store/hooks'
-import { setUser } from '@/app/store/userSlice'
+import { useAppDispatch, useAppSelector } from '@/app/store/hooks'
+import { setUser, logout as clearUser } from '@/app/store/userSlice'
 
 const ProfilePage = () => {
     const { uid } = useParams()
+    const router = useRouter()
     const dispatch = useAppDispatch()
     const { showToast, ToastComponent } = useToast()
-    
+    const currentUser = useAppSelector(state => state.user)
+    const isOwnProfile = currentUser.firebase_uid === uid
     const [profile, setProfile] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isEditing, setIsEditing] = useState(false)
@@ -40,6 +43,16 @@ const ProfilePage = () => {
                 .finally(() => setIsLoading(false))
         }
     }, [uid])
+
+    const handleLogout = async () => {
+        try {
+            await logoutFromBackend()
+            dispatch(clearUser())
+            router.push('/auth')
+        } catch (err) {
+            showToast("Logout failed", "error")
+        }
+    }
 
     const handleSave = async () => {
         setIsSaving(true)
@@ -146,20 +159,29 @@ const ProfilePage = () => {
                             </CardDescription>
                         </div>
 
-                        <div className="flex gap-2">
-                            {isEditing ? (
+                        <div className="flex flex-wrap justify-center gap-2">
+                            {isOwnProfile && (
                                 <>
-                                    <Button onClick={handleSave} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-white font-semibold">
-                                        {isSaving ? "Saving..." : <><Check className="w-4 h-4 mr-2" /> Save</>}
-                                    </Button>
-                                    <Button onClick={() => setIsEditing(false)} variant="outline" className="border-zinc-800 hover:bg-zinc-800">
-                                        <X className="w-4 h-4" />
-                                    </Button>
+                                    {isEditing ? (
+                                        <>
+                                            <Button onClick={handleSave} disabled={isSaving} className="bg-primary hover:bg-primary/90 text-white font-semibold">
+                                                {isSaving ? "Saving..." : <><Check className="w-4 h-4 mr-2" /> Save</>}
+                                            </Button>
+                                            <Button onClick={() => setIsEditing(false)} variant="outline" className="border-zinc-800 hover:bg-zinc-800">
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <div className='flex flex-col gap-2'>
+                                            <Button onClick={() => setIsEditing(true)} variant="outline" className="border-zinc-800 hover:bg-zinc-800 gap-2 cursor-pointer">
+                                                <Settings className="w-4 h-4" /> Edit Profile
+                                            </Button>
+                                            <Button onClick={handleLogout} variant="destructive" className="bg-rose-500 hover:bg-rose-600 text-white gap-2 cursor-pointer border border-rose-500">
+                                                <LogOut className="w-4 h-4" /> Log out
+                                            </Button>
+                                        </div>
+                                    )}
                                 </>
-                            ) : (
-                                <Button onClick={() => setIsEditing(true)} variant="outline" className="border-zinc-800 hover:bg-zinc-800 gap-2">
-                                    <Settings className="w-4 h-4" /> Edit Profile
-                                </Button>
                             )}
                         </div>
                     </CardHeader>

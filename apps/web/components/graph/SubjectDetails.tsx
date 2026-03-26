@@ -35,48 +35,15 @@ export const SubjectDetails: React.FC<SubjectDetailsProps> = ({
                 <div className="h-1.5 w-16 bg-primary rounded-full shadow-lg shadow-primary/20" />
             </div>
 
-            <div className="space-y-8">
-                <div className="p-6 rounded-3xl bg-secondary/40 border border-border/50 shadow-inner">
-                    <p className="text-sm text-foreground/70 leading-relaxed font-medium">
-                        Comprehensive overview of {selectedNode.name}. This node encompasses foundational principles in Tier {selectedNode.group} of Subject Domain {historyLength}.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                    <div className="p-5 rounded-3xl border border-border/50 flex items-center gap-4 hover:bg-white/5 transition-all">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                            <Target className="w-6 h-6 text-emerald-500" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Relevance</p>
-                            <p className="text-lg font-black tracking-tighter uppercase">High Priority</p>
-                        </div>
-                    </div>
-                    <div className="p-5 rounded-3xl border border-border/50 flex items-center gap-4 hover:bg-white/5 transition-all">
-                        <div className="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20">
-                            <GraduationCap className="w-6 h-6 text-sky-500" />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Skill Level</p>
-                            <p className="text-lg font-black tracking-tighter uppercase">Professional</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div className="space-y-4 pt-10 border-t border-border/40 shrink-0">
-                {selectedNode.subGraph ? (
+                {selectedNode.subGraph && 
                     <Button 
                         onClick={() => handleNodeClick(selectedNode)}
                         className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all gap-2"
                     >
                         Explore Sub-Graph <ChevronRight className="w-4 h-4" />
                     </Button>
-                ) : (
-                    <Button className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-black text-sm uppercase tracking-widest shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all">
-                        Generate Roadmap
-                    </Button>
-                )}
+                }
             </div>
         </div>
     )
