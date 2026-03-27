@@ -50,6 +50,18 @@ class RoadMap(Base):
     nodes = relationship("NodeModel", back_populates="roadmap", cascade="all, delete-orphan")
     edges = relationship("EdgeModel", back_populates="roadmap", cascade="all, delete-orphan")
 
+    @property
+    def owner_username(self):
+        return self.user.username if self.user else None
+
+    @property
+    def owner_avatar(self):
+        return self.user.avatar if self.user else None
+
+    @property
+    def owner_firebase_uid(self):
+        return self.user.firebase_uid if self.user else None
+
 position_default = {"x": 200, "y": 200}
 
 class NodeModel(Base):

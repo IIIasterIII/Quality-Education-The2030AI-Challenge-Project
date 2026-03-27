@@ -38,6 +38,9 @@ class RoadmapResponse(BaseModel):
     is_public: bool = False
     is_verified: bool = False
     tags: List[str] = []
+    owner_username: Optional[str] = None
+    owner_avatar: Optional[str] = None
+    owner_firebase_uid: Optional[str] = None
     nodes: List[NodeSchema] = []
     edges: List[EdgeSchema] = []
 

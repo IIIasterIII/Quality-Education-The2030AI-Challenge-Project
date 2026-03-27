@@ -17,8 +17,8 @@ const DefaultHandle = ({ type, position, id }: { type: 'source' | 'target', posi
         type={type} 
         position={position} 
         id={id}
-        style={{ width: '12px', height: '12px', background: '#3b82f6', border: '2px solid white' }}
-        className="z-50 hover:scale-150 transition-transform" 
+        style={{ width: '8px', height: '8px', background: '#71fd64', border: 'none', boxShadow: '0 0 10px rgba(113, 253, 100, 0.4)' }}
+        className="z-50 hover:scale-150 transition-transform bg-primary! border-none!" 
     />
 );
 
@@ -27,17 +27,25 @@ export const RoadmapNode = ({ data, selected }: { data: NodeData, selected: bool
     const hasCustomHandles = data.customHandles && data.customHandles.length > 0;
 
     return (
-        <div className={`px-5 py-4 min-w-[220px] shadow-2xl rounded-2xl border bg-card/80 backdrop-blur-sm text-card-foreground transition-all duration-300 
-            ${isCompleted ? 'border-green-500 bg-green-500/10' : ''} 
-            ${selected ? 'ring-1 ring-primary border-primary shadow-primary/20' : 'hover:border-primary/20'}`}>
+        <div className={`px-6 py-5 min-w-[240px] rounded-2xl border transition-all duration-500 group
+            ${isCompleted 
+                ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(113,253,100,0.05)]' 
+                : 'border-white/10 bg-card/40 backdrop-blur-2xl'} 
+            ${selected 
+                ? 'ring-2 ring-primary/40 border-primary shadow-[0_0_30px_rgba(113,253,100,0.1)]' 
+                : 'hover:border-white/20'}`}>
             
-            <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                    <span className="text-base font-bold tracking-tight">{data.label}</span>
-                    {isCompleted && <span className="text-green-500 text-lg"><Check size={18} /></span>}
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-bold tracking-tight text-white/90">{data.label}</span>
+                    {isCompleted && (
+                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center border border-primary/20">
+                            <Check size={12} className="text-primary" />
+                        </div>
+                    )}
                 </div>
                 {data.description && (
-                   <span className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{data.description}</span>
+                   <span className="text-[10px] text-muted-foreground/60 leading-relaxed line-clamp-2 font-medium">{data.description}</span>
                 )}
             </div>
 

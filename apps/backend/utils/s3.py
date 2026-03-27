@@ -41,3 +41,25 @@ async def delete_file_from_s3(url: str):
             await s3.delete_object(Bucket=AWS_BUCKET_NAME, Key=file_key)
         except Exception as e:
             print(f"S3 Delete Error: {e}")
+async def copy_s3_file(original_url: str) -> str:
+    if not original_url or AWS_S3_DOMEN not in original_url: return None
+    original_key = original_url.replace(f"{AWS_S3_DOMEN}/", "")
+    file_ext = os.path.splitext(original_key)[1]
+    new_key = f"roadmaps/{uuid4()}{file_ext}"
+    
+    async with session.client(
+        "s3",
+        region_name=AWS_REGION,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    ) as s3:
+        try:
+            await s3.copy_object(
+                Bucket=AWS_BUCKET_NAME,
+                CopySource={'Bucket': AWS_BUCKET_NAME, 'Key': original_key},
+                Key=new_key
+            )
+            return f"{AWS_S3_DOMEN}/{new_key}"
+        except Exception as e:
+            print(f"S3 Copy Error: {e}")
+            return None

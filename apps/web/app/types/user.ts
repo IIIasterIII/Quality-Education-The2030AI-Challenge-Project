@@ -22,6 +22,10 @@ export interface RoadMap {
     is_public?: boolean
     is_verified?: boolean
     tags?: string[]
+    owner_username?: string
+    owner_avatar?: string
+    owner_id?: number
+    owner_firebase_uid?: string
 }
 
 export interface NodeHandle {

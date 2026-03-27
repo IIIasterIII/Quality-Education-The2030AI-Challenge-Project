@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { startStreaming } from '@/components/roadMapsComponents/startStreaming'
 import { 
     ReactFlow, 
@@ -35,8 +35,9 @@ import {
 import { Plus, Save, Edit3, Eye, Trash2, Settings2, Undo2, Loader2, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Input } from '@workspace/ui/components/input';
 import { Textarea } from '@workspace/ui/components/textarea';
-import { saveChanges, getAllRoadmapData } from '@/app/api/roadmap';
+import { saveChanges, getAllRoadmapData, copyRoadmap } from '@/app/api/roadmap';
 import { useToast } from '@/components/toast';
+import { useAppSelector } from '@/app/store/hooks';
 
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
@@ -93,6 +94,7 @@ const getAllDescendantsIds = (nodeId: string, edges: Edge[], visited = new Set<s
 const page = () => {
     const params = useParams()
     const id = params.id as string
+    const router = useRouter()
     const { resolvedTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
     const [isEditMode, setIsEditMode] = useState(false)
@@ -102,10 +104,13 @@ const page = () => {
     const [selectedNode, setSelectedNode] = useState<Node | null>(null);
     const [isLoading, setIsLoading] = useState(true)
     const [past, setPast] = useState<Snapshot[]>([]);
+    const [owner, setOwner] = useState<number | null>(null);
+    const user = useAppSelector((state) => state.user);
     const [isSaving, setIsSaving] = useState(false);
     const [streamingText, setStreamingText] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [showConfirmReset, setShowConfirmReset] = useState(false);
+    const [isCopying, setIsCopying] = useState(false);
     const { showToast, ToastComponent } = useToast();
     const fetchedIdRef = useRef<string | null>(null)
     useEffect(() => { setMounted(true) }, [])
@@ -120,6 +125,7 @@ const page = () => {
                 if (active && data) {
                     setNodes(data.nodes || []);
                     setEdges(data.edges || []);
+                    setOwner(data.user_id || null);
                     fetchedIdRef.current = id;
                 }
             } catch (error) {
@@ -330,37 +336,55 @@ const page = () => {
         }
     };
 
+    const handleCopy = async () => {
+        setIsCopying(true);
+        try {
+            const result = await copyRoadmap(id);
+            if (result && result.new_id) {
+                showToast("Roadmap copied to your profile!", "success");
+                router.push(`/app/roadmaps/${result.new_id}`);
+            } else {
+                showToast("Failed to copy roadmap.", "error");
+            }
+        } catch (err) {
+            showToast("Something went wrong while copying.", "error");
+        } finally {
+            setIsCopying(false);
+        }
+    };
+
     if (!mounted) return null;
 
     return (
-        <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background">
+        <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background transition-all duration-500">
             {ToastComponent}
-            <ResizablePanel minSize={200} maxSize={350} defaultSize="15%">
+            {user.id === owner ? (
+                <ResizablePanel minSize={200} maxSize={350} defaultSize="20%">
 
-                <div className="flex h-full flex-col p-6 border-r bg-card/30 backdrop-blur-xl">
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-xl font-black tracking-tighter uppercase text-primary/80">Navigator</h2>
-                        <Settings2 className="w-5 h-5 text-muted-foreground opacity-50" />
+                <div className="flex h-full flex-col p-6 border-r border-white/10 bg-card/40 backdrop-blur-2xl">
+                    <div className="flex items-center justify-between mb-10">
+                        <h2 className="text-sm font-bold tracking-widest uppercase text-muted-foreground/50">Navigator</h2>
+                        <Settings2 className="w-4 h-4 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer" />
                     </div>
 
                     <div className="space-y-5 flex-1 overflow-y-auto no-scrollbar pb-6">
-                        <div className="p-4 rounded-2xl bg-secondary/50 border border-border/50 shadow-inner">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 opacity-70">Current Roadmap</p>
-                            <p className="text-sm font-mono truncate text-primary/90">ID: {id}</p>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 shadow-inner group transition-colors hover:border-white/10">
+                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">Current Roadmap</p>
+                            <p className="text-xs font-mono truncate text-primary/80">ID: {id}</p>
                         </div>
 
-                        <div className='flex flex-col items-center gap-2 p-4 bg-secondary/30 rounded-2xl border border-border/50'>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest self-start px-1">AI Assistant</p>
+                        <div className='flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/5'>
+                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI Architect</p>
                             <Input
                                 placeholder="Topic (e.g. Python basics)"
                                 value={topic}
                                 onChange={(e) => setTopic(e.target.value)}
-                                className="rounded-xl bg-background/50 border-primary/10"
+                                className="h-9 rounded-lg bg-black/40 border-white/10 text-xs focus-visible:ring-primary/20"
                             />
                             <Button 
                                 onClick={handleGenerate} 
                                 disabled={!topic || isGenerating}
-                                className="w-full gap-2 rounded-xl bg-primary/20 hover:bg-primary/30 text-primary border border-primary/20 transition-all font-bold"
+                                className="w-full h-9 gap-2 rounded-lg bg-primary hover:bg-primary/90 text-black font-bold text-xs transition-all shadow-lg shadow-primary/10"
                             >
                                 {isGenerating ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -376,7 +400,7 @@ const page = () => {
 
 
                         <div className="space-y-3">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Display Mode</p>
+                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Display Mode</p>
                             <div className="flex p-1 bg-secondary/40 rounded-xl border border-border/50">
                                 <button 
                                     onClick={() => setIsEditMode(false)}
@@ -415,25 +439,41 @@ const page = () => {
                         )}
                     </div>
 
-                    <div className="pt-6 border-t border-border/50">
+                    <div className="pt-6 border-t border-white/5">
                         {isEditMode ? (
                             <div className="space-y-3">
-                                <Button onClick={saveToServer} disabled={isSaving} className="w-full gap-2 rounded-xl shadow-lg shadow-primary/20 font-extrabold py-6">
+                                <Button onClick={saveToServer} disabled={isSaving} className="w-full h-11 gap-2 rounded-lg bg-white text-black hover:bg-white/90 font-bold text-xs transition-all">
                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    Save changes
+                                    Save Protocol
                                 </Button>
-                                <Button variant="ghost" onClick={discardChanges} className="w-full text-[10px] font-bold py-2">Discard unsaved</Button>
+                                <Button variant="ghost" onClick={discardChanges} className="w-full text-[10px] text-muted-foreground hover:text-white font-bold h-8">Discard unsaved</Button>
                             </div>
                         ) : (
-                            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
-                                <p className="text-[10px] text-primary/70 font-bold flex items-center justify-center gap-2 uppercase">
-                                    <Eye className="w-3 h-3" /> View Only Mode
+                            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
+                                <p className="text-[10px] text-primary font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
+                                    <Eye className="w-3 h-3" /> View Mode Active
                                 </p>
                             </div>
                         )}
                     </div>
                 </div>
-            </ResizablePanel>
+                </ResizablePanel>
+            ) : (
+                <div className="absolute top-6 left-6 z-50 animate-in slide-in-from-left-4 duration-500">
+                    <Button 
+                        onClick={handleCopy} 
+                        disabled={isCopying}
+                        className="gap-2.5 h-11 px-6 rounded-xl bg-primary text-black font-bold shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                        {isCopying ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Plus className="w-4 h-4" />
+                        )}
+                        Copy to My Space
+                    </Button>
+                </div>
+            )}
             
             <ResizableHandle withHandle />
             
@@ -479,7 +519,7 @@ const page = () => {
                             nodesConnectable={isEditMode}
                             fitView
                         >
-                            <Background variant={BackgroundVariant.Dots} gap={24} size={1} color={resolvedTheme === 'dark' ? '#333' : '#ccc'} />
+                            <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255, 255, 255, 0.05)" />
                         </ReactFlow>
                     )}
                 </div>
@@ -488,81 +528,81 @@ const page = () => {
             <ResizableHandle withHandle />
             
             <ResizablePanel minSize={250} maxSize={450} defaultSize="25%">
-                <div className="flex h-full flex-col p-6 border-l bg-card/30 backdrop-blur-xl shrink-0">
-                    <h2 className="text-xl font-black tracking-tighter mb-6 uppercase text-primary/80">Information</h2>
+                <div className="flex h-full flex-col p-6 border-l border-white/10 bg-card/40 backdrop-blur-2xl shrink-0">
+                    <h2 className="text-sm font-bold tracking-widest mb-10 uppercase text-muted-foreground/50">Information</h2>
                     
                     {currentNode ? (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto no-scrollbar pb-6">
                             {isEditMode ? (
-                                <div className="space-y-5">
+                                <div className="space-y-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-muted-foreground uppercase px-1">Step Title</label>
+                                        <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Step Title</label>
                                         <Input 
                                             value={currentNode.data.label as string} 
                                             onFocus={onEditFocus}
                                             onChange={(e) => updateNodeData('label', e.target.value)}
-                                            className="rounded-xl border-primary/20 bg-background/50 focus-visible:ring-primary/30"
+                                            className="h-10 rounded-lg border-white/10 bg-black/40 text-sm focus-visible:ring-primary/20"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-muted-foreground uppercase px-1">Detailed Description</label>
+                                        <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Description</label>
                                         <Textarea 
                                             value={currentNode.data.description as string || ''} 
                                             onFocus={onEditFocus}
                                             onChange={(e) => updateNodeData('description', e.target.value)}
-                                            className="rounded-xl border-primary/20 bg-background/50 focus-visible:ring-primary/30 min-h-[160px] resize-none leading-relaxed"
+                                            className="rounded-lg border-white/10 bg-black/40 text-sm focus-visible:ring-primary/20 min-h-[160px] resize-none leading-relaxed p-4"
                                         />
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-secondary/30 border border-border/50 text-xs space-y-2">
-                                        <p className="font-bold opacity-50 uppercase tracking-widest">Metadata</p>
-                                        <div className="flex justify-between"><span>Node ID:</span><span className="font-mono text-[10px]">{currentNode.id}</span></div>
+                                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-[10px] space-y-2">
+                                        <p className="font-bold text-muted-foreground/40 uppercase tracking-widest">System Metadata</p>
+                                        <div className="flex justify-between"><span>Node ID</span><span className="font-mono opacity-60">{currentNode.id}</span></div>
                                     </div>
                                 </div>
                             ) : (
-                                <>
-                                    <div className="space-y-3">
-                                        <h3 className="text-2xl font-black leading-tight tracking-tight text-foreground">{currentNode.data.label as string}</h3>
-                                        <div className="h-1 w-12 bg-primary rounded-full" />
+                                <div className="space-y-8">
+                                    <div className="space-y-2">
+                                        <h3 className="text-3xl font-bold tracking-tight text-foreground">{currentNode.data.label as string}</h3>
+                                        <div className="h-0.5 w-12 bg-primary/40 rounded-full" />
                                     </div>
                                     
-                                    <div className="p-5 rounded-2xl bg-secondary/30 border border-border/50 shadow-inner">
-                                        <p className="text-sm text-foreground/70 leading-relaxed italic">
-                                            {currentNode.data.description as string || 'No additional details provided.'}
+                                    <div className="p-6 rounded-xl bg-white/5 border border-white/5">
+                                        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                            {currentNode.data.description as string || 'No additional details provided for this protocol step.'}
                                         </p>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="p-4 rounded-2xl bg-card border shadow-sm text-center">
-                                            <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mb-1">Status</p>
-                                            <p className={`text-xs font-black uppercase ${currentNode.data.isCompleted ? 'text-green-500' : 'text-primary'}`}>
-                                                {currentNode.data.isCompleted ? 'Done' : 'Todo'}
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                                            <p className="text-[9px] uppercase font-bold text-muted-foreground/40 tracking-widest mb-1">Status</p>
+                                            <p className={`text-xs font-bold uppercase ${currentNode.data.isCompleted ? 'text-green-500' : 'text-primary'}`}>
+                                                {currentNode.data.isCompleted ? 'Completed' : 'Pending'}
                                             </p>
                                         </div>
-                                        <div className="p-4 rounded-2xl bg-card border shadow-sm text-center">
-                                            <p className="text-[9px] uppercase font-black text-muted-foreground tracking-widest mb-1">Complexity</p>
-                                            <p className="text-xs font-black uppercase text-foreground/50">Medium</p>
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 text-center">
+                                            <p className="text-[9px] uppercase font-bold text-muted-foreground/40 tracking-widest mb-1">Complexity</p>
+                                            <p className="text-xs font-bold uppercase text-muted-foreground/60">Tier 2</p>
                                         </div>
                                     </div>
 
-                                    <button 
+                                    <Button 
                                         onClick={() => handleToggleComplete(currentNode.id)}
-                                        className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 
+                                        className={`w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all active:scale-95 border
                                             ${currentNode.data.isCompleted 
-                                                ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' 
-                                                : 'bg-primary text-primary-foreground hover:brightness-110 shadow-primary/20'}`}
+                                                ? 'bg-transparent border-green-500/50 text-green-500 hover:bg-green-500/5' 
+                                                : 'bg-primary text-black border-transparent hover:bg-primary/90 shadow-lg shadow-primary/20'}`}
                                     >
-                                        {currentNode.data.isCompleted ? 'Reset Step' : 'Confirm Completion'}
-                                    </button>
-                                </>
+                                        {currentNode.data.isCompleted ? 'Reset Protocol Step' : 'Confirm Step Protocol'}
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-10 border-2 border-dashed rounded-[2.5rem] opacity-30 grayscale saturate-0">
-                            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6 shadow-2xl">
-                                <span className="text-3xl">🧩</span>
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-12 border-2 border-dashed border-white/5 rounded-[2.5rem] bg-white/2">
+                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-8 border border-white/5 shadow-2xl">
+                                <Settings2 className="w-6 h-6 text-muted-foreground/30 animate-pulse" />
                             </div>
-                            <p className="text-sm font-black uppercase tracking-[0.15em] text-muted-foreground">
-                                Select a node to view properties
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/30 max-w-[160px] leading-relaxed">
+                                Select a protocol node to view properties
                             </p>
                         </div>
                     )}

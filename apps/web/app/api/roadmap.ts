@@ -107,3 +107,48 @@ export async function verifyRoadmap(roadmapId: string, verified: boolean = true)
         return null
     }
 }
+export async function copyRoadmap(roadmapId: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}/copy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error copying roadmap", err)
+        return null
+    }
+}
+
+export async function updateRoadmapMetadata(roadmapId: string, title?: string, description?: string, image?: File) {
+    try {
+        const formData = new FormData()
+        if (title) formData.append("title", title)
+        if (description !== undefined) formData.append("description", description)
+        if (image) formData.append("image", image)
+
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}/update`, {
+            method: "PATCH",
+            body: formData,
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error updating roadmap metadata", err)
+        return null
+    }
+}
+
+export async function deleteRoadmap(roadmapId: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}`, {
+            method: "DELETE",
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error deleting roadmap", err)
+        return null
+    }
+}

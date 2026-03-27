@@ -18,7 +18,7 @@ const fontMono = Geist_Mono({
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning className={cn("dark antialiased", fontMono.variable, "font-sans", fontSans.variable)} style={{ colorScheme: 'dark' }}>
-      <body cz-shortcut-listen="true" suppressHydrationWarning className="bg-black text-white">
+      <body cz-shortcut-listen="true" suppressHydrationWarning className="bg-background text-foreground">
           <MathJaxProvider>
             <StoreProvider>
               <AuthProvider>
