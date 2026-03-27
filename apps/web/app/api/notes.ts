@@ -108,8 +108,8 @@ export async function createNewSubNote(page_id: string, title: string, content?:
     }
 }
 
-export async function editSubNote(page_id: string, subnote_id: string, title?: string, content?: any) {
-    const data = { title, content }
+export async function editSubNote(page_id: string, subnote_id: string, title?: string, content?: any, summary?: string) {
+    const data = { title, content, summary }
     try {
         const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes/${subnote_id}`, {
             method: "PATCH",
@@ -121,6 +121,30 @@ export async function editSubNote(page_id: string, subnote_id: string, title?: s
         return await response.json()
     } catch (err) {
         console.log("Error editing subnote", err)
+        return null
+    }
+}
+
+export async function generateSubNoteSummary(page_id: string, subnote_id: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes/${subnote_id}/generate-summary`, {
+            method: "POST",
+            credentials: "include",
+        })
+        if (!response.ok) return null
+        
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        if (!reader) return null
+        let result = ""
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            result += decoder.decode(value)
+        }
+        return JSON.parse(result)
+    } catch (err) {
+        console.log("Error generating subnote summary", err)
         return null
     }
 }

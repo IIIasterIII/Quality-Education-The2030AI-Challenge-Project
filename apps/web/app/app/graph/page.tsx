@@ -1,7 +1,7 @@
 "use client"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { ChevronRight, Infinity } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { useToast } from '@/components/toast'
 import { KnowledgeGraph } from '@/components/graph/KnowledgeGraph'
@@ -14,6 +14,7 @@ import { getGraphData, updateNoteStats } from '@/app/api/notes'
 interface SubNoteData {
     id: number
     title: string
+    summary?: string
 }
 
 interface LinkData {
@@ -142,6 +143,64 @@ const Page = () => {
         setGraphData(data || [])
     }
 
+    const handleUpdateNode = (nodeId: string, updates: Partial<Node>) => {
+        setGraphData(prev => prev.map(item => 
+            String(item.id) === nodeId ? { ...item, ...updates } as MainGraphData : item
+        ));
+        
+        setCurrentData(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                nodes: prev.nodes.map(n => n.id === nodeId ? { ...n, ...updates } : n)
+            };
+        });
+
+        setSelectedNode(prev => {
+            if (prev && prev.id === nodeId) return { ...prev, ...updates };
+            return prev;
+        });
+    };
+
+    const handleUpdateSubNote = (subNoteId: number, updates: { summary: string }) => {
+        setGraphData(prev => prev.map(item => ({
+            ...item,
+            subNotes: (item.subNotes || []).map(sub => 
+                sub.id === subNoteId ? { ...sub, ...updates } : sub
+            )
+        })));
+
+        setCurrentData(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                nodes: prev.nodes.map(n => {
+                    if (n.subNotes) {
+                        return {
+                            ...n,
+                            subNotes: n.subNotes.map(sub => 
+                                sub.id === subNoteId ? { ...sub, ...updates } : sub
+                            )
+                        }
+                    }
+                    return n;
+                })
+            };
+        });
+
+        setSelectedNode(prev => {
+            if (prev && prev.subNotes) {
+                return {
+                    ...prev,
+                    subNotes: prev.subNotes.map(sub => 
+                        sub.id === subNoteId ? { ...sub, ...updates } : sub
+                    )
+                };
+            }
+            return prev;
+        });
+    };
+
     useEffect(() => {
         fetchGraphData()
     }, [])
@@ -157,42 +216,48 @@ const Page = () => {
     useEffect(() => {
         if (!graphData || graphData.length === 0) return;
 
-        const nodes: Node[] = graphData.map((item, index) => ({
-            id: String(item.id),
-            name: item.title,
-            val: Math.max(item.notesCount * 5, 10),
-            group: index + 1,
-            complexity: item.complexity,
-            time_spent: item.time_spent,
-            last_opened: item.last_opened || undefined,
-            summary: item.summary || undefined,
-            subNotes: item.subNotes,
-            notesCount: item.notesCount,
-            x: (Math.random() - 0.5) * 500,
-            y: (Math.random() - 0.5) * 500,
-            subGraph: item.subNotes && item.subNotes.length > 0 ? {
-                nodes: item.subNotes.map(sub => ({
-                    id: `sub_${sub.id}`,
-                    name: sub.title,
-                    val: 8,
-                    group: index + 1,
-                    x: (Math.random() - 0.5) * 200,
-                    y: (Math.random() - 0.5) * 200,
-                })),
-                links: [
-                    ...item.subNotes.map(sub => ({
-                        source: String(item.id),
-                        target: `sub_${sub.id}`
-                    })),
-                    ...item.subNotes.flatMap((sub, i) => 
-                        item.subNotes.slice(i + 1).map(other => ({
-                            source: `sub_${sub.id}`,
-                            target: `sub_${other.id}`
-                        }))
-                    )
-                ]
-            } : undefined
-        }));
+        const nodes: Node[] = graphData.map((item, index) => {
+            const existingNode = currentData?.nodes.find(n => n.id === String(item.id));
+            return {
+                id: String(item.id),
+                name: item.title,
+                val: Math.max(item.notesCount * 5, 10),
+                group: index + 1,
+                complexity: item.complexity,
+                time_spent: item.time_spent,
+                last_opened: item.last_opened || undefined,
+                summary: item.summary || undefined,
+                subNotes: item.subNotes,
+                notesCount: item.notesCount,
+                x: existingNode?.x ?? (Math.random() - 0.5) * 500,
+                y: existingNode?.y ?? (Math.random() - 0.5) * 500,
+                subGraph: item.subNotes && item.subNotes.length > 0 ? {
+                    nodes: item.subNotes.map(sub => {
+                        const existingSub = existingNode?.subGraph?.nodes.find(sn => sn.id === `sub_${sub.id}`);
+                        return {
+                            id: `sub_${sub.id}`,
+                            name: sub.title,
+                            val: 8,
+                            group: index + 1,
+                            x: existingSub?.x ?? (Math.random() - 0.5) * 200,
+                            y: existingSub?.y ?? (Math.random() - 0.5) * 200,
+                        };
+                    }),
+                    links: [
+                        ...item.subNotes.map(sub => ({
+                            source: String(item.id),
+                            target: `sub_${sub.id}`
+                        })),
+                        ...item.subNotes.flatMap((sub, i) => 
+                            item.subNotes.slice(i + 1).map(other => ({
+                                source: `sub_${sub.id}`,
+                                target: `sub_${other.id}`
+                            }))
+                        )
+                    ]
+                } : undefined
+            };
+        });
 
         const allLinksSet = new Set<string>();
         const links: any[] = [];
@@ -293,6 +358,8 @@ const Page = () => {
                                 historyLength={history.length}
                                 setSelectedNode={setSelectedNode}
                                 handleNodeClick={handleDrillDown}
+                                onUpdateNode={handleUpdateNode}
+                                onUpdateSubNote={handleUpdateSubNote}
                             />
                         ) : (
                             <SubjectDirectory 

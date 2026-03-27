@@ -19,6 +19,9 @@ export interface RoadMap {
     title: string
     description: string
     image_url: string
+    is_public?: boolean
+    is_verified?: boolean
+    tags?: string[]
 }
 
 export interface NodeHandle {

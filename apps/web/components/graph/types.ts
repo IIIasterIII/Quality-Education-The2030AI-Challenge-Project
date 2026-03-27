@@ -1,6 +1,7 @@
 export interface SubNote {
     id: number;
     title: string;
+    summary?: string;
 }
 
 export interface Node {

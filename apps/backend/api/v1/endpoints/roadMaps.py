@@ -5,7 +5,7 @@ from utils.utils import get_current_user, get_db
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from utils.s3 import upload_file_to_s3
-from schemas.roadmap import SaveRoadmapRequest, RoadmapResponse
+from schemas.roadmap import SaveRoadmapRequest, RoadmapResponse, RoadmapShareRequest
 
 load_dotenv()
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
@@ -32,7 +32,23 @@ async def pagination_roadmaps(
     current_user: User = Depends(get_current_user)
 ):
     offset = (page - 1) * limit
-    roadmaps = db.query(RoadMap).join(User).filter(User.id == current_user.id).offset(offset).limit(limit).all()
+    roadmaps = db.query(RoadMap).filter(RoadMap.user_id == current_user.id).offset(offset).limit(limit).all()
+    return roadmaps
+
+@router.get("/community", response_model=List[RoadmapResponse])
+async def get_community_roadmaps(
+    page: int = 1, limit: int = 20,
+    tag: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    offset = (page - 1) * limit
+    query = db.query(RoadMap).filter(RoadMap.is_public == True, RoadMap.is_verified == True)
+    
+    if tag:
+        # Simple JSON search for tag
+        query = query.filter(RoadMap.tags.contains([tag]))
+        
+    roadmaps = query.order_by(RoadMap.id.desc()).offset(offset).limit(limit).all()
     return roadmaps
 
 @router.get("/{id}", response_model=RoadmapResponse)
@@ -111,3 +127,40 @@ async def save_roadmap(
 
     db.refresh(roadmap)
     return {"message": "Roadmap saved successfully", "id": roadmap.id}
+@router.patch("/{id}/share", response_model=RoadmapResponse)
+async def share_roadmap(
+    id: int,
+    request: RoadmapShareRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    roadmap = db.query(RoadMap).filter(RoadMap.id == id).first()
+    if not roadmap:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+    
+    if roadmap.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You are not authorized to share this roadmap")
+        
+    roadmap.is_public = request.is_public
+    roadmap.tags = request.tags
+    
+    db.commit()
+    db.refresh(roadmap)
+    return roadmap
+
+@router.patch("/{id}/verify", response_model=RoadmapResponse)
+async def verify_roadmap(
+    id: int,
+    is_verified: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # In a real app, check if current_user is admin
+    roadmap = db.query(RoadMap).filter(RoadMap.id == id).first()
+    if not roadmap:
+        raise HTTPException(status_code=404, detail="Roadmap not found")
+        
+    roadmap.is_verified = is_verified
+    db.commit()
+    db.refresh(roadmap)
+    return roadmap

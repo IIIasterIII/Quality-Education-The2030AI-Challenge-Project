@@ -7,6 +7,7 @@ export interface NoteNote {
     accentColor: string;
     type: 'normal' | 'math';
     content?: any;
+    summary?: string;
 }
 
 export interface NoteToCreate extends Omit<NoteNote, 'id' | 'updatedAt' | 'notesCount'> {}    

@@ -1,5 +1,5 @@
 from typing import List, Optional, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 class NodeDataSchema(BaseModel):
     label: str
@@ -35,8 +35,25 @@ class RoadmapResponse(BaseModel):
     title: str
     description: Optional[str]
     image_url: Optional[str]
+    is_public: bool = False
+    is_verified: bool = False
+    tags: List[str] = []
     nodes: List[NodeSchema] = []
     edges: List[EdgeSchema] = []
 
+    @field_validator('is_public', 'is_verified', mode='before')
+    @classmethod
+    def validate_bool(cls, v):
+        return v if v is not None else False
+
+    @field_validator('tags', mode='before')
+    @classmethod
+    def validate_tags(cls, v):
+        return v if v is not None else []
+
     class Config:
         from_attributes = True
+
+class RoadmapShareRequest(BaseModel):
+    is_public: bool
+    tags: List[str]

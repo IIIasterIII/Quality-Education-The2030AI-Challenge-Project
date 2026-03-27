@@ -63,3 +63,47 @@ export async function getAllRoadmapData(roadmapId: string) {
         return null
     }
 }
+
+export async function getCommunityRoadmaps(page: number = 1, limit: number = 20, tag?: string) {
+    try {
+        let url = `${BACKEND_URL}/roadmap/community?page=${page}&limit=${limit}`
+        if (tag) url += `&tag=${encodeURIComponent(tag)}`
+        
+        const response = await fetch(url, {
+            method: "GET",
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error getting community roadmaps", err)
+        return null
+    }
+}
+
+export async function shareRoadmap(roadmapId: string, isPublic: boolean, tags: string[]) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}/share`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ is_public: isPublic, tags }),
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error sharing roadmap", err)
+        return null
+    }
+}
+
+export async function verifyRoadmap(roadmapId: string, verified: boolean = true) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/roadmap/${roadmapId}/verify?verified=${verified}`, {
+            method: "PATCH",
+            credentials: "include",
+        })
+        return await response.json()
+    } catch (err) {
+        console.log("Error verifying roadmap", err)
+        return null
+    }
+}
