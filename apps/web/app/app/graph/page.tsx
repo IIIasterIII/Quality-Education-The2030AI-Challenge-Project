@@ -1,7 +1,7 @@
 "use client"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Infinity } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { useToast } from '@/components/toast'
 import { KnowledgeGraph } from '@/components/graph/KnowledgeGraph'
@@ -9,7 +9,7 @@ import { SubjectDetails } from '@/components/graph/SubjectDetails'
 import { SubjectDirectory } from '@/components/graph/SubjectDirectory'
 import { GraphLegend } from '@/components/graph/GraphLegend'
 import { Node, GraphData } from '@/components/graph/types'
-import { getGraphData } from '@/app/api/notes'
+import { getGraphData, updateNoteStats } from '@/app/api/notes'
 
 interface SubNoteData {
     id: number
@@ -30,123 +30,13 @@ interface MainGraphData {
     updatedAt: string
     accentColor: string
     type: string
+    complexity: string
+    time_spent: number
+    last_opened: string | null
+    summary: string | null
     subNotes: SubNoteData[]
     links: LinkData[]
 }
-
-/*
-const GRAPH_DATA_LEVEL_2_MATH: GraphData = {
-    nodes: [
-        { id: 'math_calc_1', name: 'Calculus I', val: 8, group: 2 },
-        { id: 'math_calc_2', name: 'Calculus II', val: 8, group: 2 },
-        { id: 'math_analysis', name: 'Real Analysis', val: 10, group: 2 },
-        { id: 'math_topology', name: 'Topology', val: 9, group: 2 },
-    ],
-    links: [
-        { source: 'math_calc_1', target: 'math_calc_2' },
-        { source: 'math_calc_2', target: 'math_analysis' },
-        { source: 'math_analysis', target: 'math_topology' },
-    ]
-};
-
-const INITIAL_DATA: GraphData = {
-    nodes: [
-        { 
-            id: 'cs', 
-            name: 'Computer Science', 
-            group: 1, 
-            val: 20,
-            subGraph: {
-                nodes: [
-                    { id: 'cs_lang', name: 'Programming Languages', val: 12, group: 1, 
-                        subGraph: {
-                            nodes: [
-                                { id: 'cpp', name: 'C++', val: 8, group: 1 },
-                                { id: 'rust', name: 'Rust', val: 8, group: 1 },
-                                { id: 'py', name: 'Python', val: 8, group: 1 },
-                            ],
-                            links: [
-                                { source: 'cpp', target: 'rust' }
-                            ]
-                        }
-                    },
-                    { id: 'cs_logic', name: 'Mathematical Logic', val: 10, group: 1 },
-                    { id: 'cs_arch', name: 'Architecture', val: 10, group: 1 },
-                ],
-                links: [
-                    { source: 'cs_lang', target: 'cs_logic' },
-                    { source: 'cs_arch', target: 'cs_lang' }
-                ]
-            }
-        },
-        { id: 'math', name: 'Mathematics', group: 2, val: 18, subGraph: GRAPH_DATA_LEVEL_2_MATH },
-        { id: 'phys', name: 'Physics', group: 3, val: 15, 
-            subGraph: {
-                nodes: [
-                    { id: 'mech', name: 'Mechanics', val: 10, group: 3 },
-                    { id: 'electro', name: 'Electromagnetism', val: 10, group: 3 },
-                    { id: 'thermo', name: 'Thermodynamics', val: 10, group: 3 },
-                ],
-                links: [
-                    { source: 'mech', target: 'electro' }
-                ]
-            }
-        },
-        { id: 'prog', name: 'Programming Fundamentals', group: 1, val: 12 },
-        { id: 'algo', name: 'Algorithms & Data Structures', group: 1, val: 14 },
-        { id: 'db', name: 'Databases', group: 1, val: 10 },
-        { id: 'os', name: 'Operating Systems', group: 1, val: 10 },
-        { id: 'net', name: 'Networking', group: 1, val: 9 },
-        { id: 'arch', name: 'Computer Architecture', group: 1, val: 10 },
-        { id: 'discrete', name: 'Discrete Math', group: 2, val: 10 },
-        { id: 'calc', name: 'Calculus', group: 2, val: 10 },
-        { id: 'linear', name: 'Linear Algebra', group: 2, val: 8 },
-        { id: 'stats', name: 'Statistics', group: 2, val: 8 },
-        { id: 'ai', name: 'Artificial Intelligence', group: 4, val: 14 },
-        { id: 'ml', name: 'Machine Learning', group: 4, val: 12 },
-        { id: 'dl', name: 'Deep Learning', group: 4, val: 11 },
-        { id: 'cv', name: 'Computer Vision', group: 4, val: 9 },
-        { id: 'nlp', name: 'Natural Language Processing', group: 4, val: 9 },
-        { id: 'quant', name: 'Quantum Computing', group: 3, val: 12 },
-        { id: 'bio', name: 'Bioinformatics', group: 5, val: 10 },
-        { id: 'chem', name: 'Computational Chemistry', group: 5, val: 9 },
-        { id: 'security', name: 'Cybersecurity', group: 1, val: 11 },
-        { id: 'web', name: 'Web Development', group: 1, val: 9 },
-        { id: 'mobile', name: 'Mobile Dev', group: 1, val: 8 },
-        { id: 'cloud', name: 'Cloud Computing', group: 1, val: 10 },
-    ],
-    links: [
-        { source: 'math', target: 'cs' },
-        { source: 'math', target: 'phys' },
-        { source: 'math', target: 'discrete' },
-        { source: 'discrete', target: 'cs' },
-        { source: 'cs', target: 'prog' },
-        { source: 'prog', target: 'algo' },
-        { source: 'algo', target: 'ai' },
-        { source: 'math', target: 'calc' },
-        { source: 'calc', target: 'phys' },
-        { source: 'linear', target: 'ml' },
-        { source: 'stats', target: 'ml' },
-        { source: 'ml', target: 'dl' },
-        { source: 'dl', target: 'cv' },
-        { source: 'dl', target: 'nlp' },
-        { source: 'cs', target: 'os' },
-        { source: 'cs', target: 'db' },
-        { source: 'arch', target: 'os' },
-        { source: 'os', target: 'net' },
-        { source: 'phys', target: 'quant' },
-        { source: 'cs', target: 'quant' },
-        { source: 'cs', target: 'bio' },
-        { source: 'db', target: 'web' },
-        { source: 'net', target: 'web' },
-        { source: 'net', target: 'security' },
-        { source: 'prog', target: 'mobile' },
-        { source: 'os', target: 'cloud' },
-        { source: 'db', target: 'cloud' },
-    ]
-};
-*/
-
 
 const Page = () => {
     const { showToast, ToastComponent } = useToast()
@@ -159,6 +49,8 @@ const Page = () => {
     const graphRef = useRef<any>(null)
     const containerRef = useRef<HTMLDivElement>(null)
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
+    const timeSpentRef = useRef<number>(0)
+    const activeNodeIdRef = useRef<string | null>(null)
     useEffect(() => { setMounted(true) }, [])
 
     useEffect(() => {
@@ -181,6 +73,29 @@ const Page = () => {
             graphRef.current.centerAt(node.x, node.y, 500);
         }
     };
+
+    // Time Tracking Logic
+    useEffect(() => {
+        if (selectedNode && !selectedNode.id.startsWith('sub_')) {
+            activeNodeIdRef.current = selectedNode.id
+            timeSpentRef.current = 0
+            const interval = setInterval(() => {
+                timeSpentRef.current += 1
+            }, 1000)
+
+            // Update last_opened immediately
+            updateNoteStats(selectedNode.id, { last_opened: new Date().toISOString() })
+
+            return () => {
+                clearInterval(interval)
+                if (activeNodeIdRef.current && timeSpentRef.current > 0) {
+                    updateNoteStats(activeNodeIdRef.current, { time_spent: timeSpentRef.current })
+                }
+                activeNodeIdRef.current = null
+                timeSpentRef.current = 0
+            }
+        }
+    }, [selectedNode?.id])
 
     const handleDrillDown = (node: Node) => {
         if (node.subGraph) {
@@ -222,12 +137,13 @@ const Page = () => {
         return { nodes: filteredNodes, links: matchingLinks };
     }, [filteredNodes, currentData, searchTerm]);
 
+    const fetchGraphData = async () => {
+        const data = await getGraphData()
+        setGraphData(data || [])
+    }
+
     useEffect(() => {
-        const getGraphDataFunction = async () => {
-            const data = await getGraphData()
-            setGraphData(data || [])
-        }
-        getGraphDataFunction()
+        fetchGraphData()
     }, [])
 
     const groupColors = useMemo(() => {
@@ -246,6 +162,12 @@ const Page = () => {
             name: item.title,
             val: Math.max(item.notesCount * 5, 10),
             group: index + 1,
+            complexity: item.complexity,
+            time_spent: item.time_spent,
+            last_opened: item.last_opened || undefined,
+            summary: item.summary || undefined,
+            subNotes: item.subNotes,
+            notesCount: item.notesCount,
             x: (Math.random() - 0.5) * 500,
             y: (Math.random() - 0.5) * 500,
             subGraph: item.subNotes && item.subNotes.length > 0 ? {
@@ -298,8 +220,41 @@ const Page = () => {
     if (!mounted) return null;
 
     return (
-        <div className="h-screen w-full bg-background overflow-hidden flex flex-col">
+        <div className="h-screen w-full bg-[#050505] overflow-hidden flex flex-col">
             {ToastComponent}
+            
+            <div className="h-12 border-b border-border/40 bg-background/40 backdrop-blur-md z-100">
+                <div className="h-full max-w-7xl mx-auto px-6 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] uppercase font-black text-muted-foreground tracking-tighter">Nodes</span>
+                            <span className="text-sm font-bold text-white tabular-nums">{graphData.length}</span>
+                        </div>
+                        <div className="w-px h-4 bg-white/10" />
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] uppercase font-black text-muted-foreground tracking-tighter">Research</span>
+                            <span className="text-sm font-bold text-white tabular-nums">
+                                {graphData.reduce((acc, curr) => acc + (curr.notesCount || 0), 0)}
+                            </span>
+                        </div>
+                        <div className="w-px h-4 bg-white/10" />
+                        <div className="flex items-center gap-2">
+                            <span className="text-[9px] uppercase font-black text-muted-foreground tracking-tighter">Study Time</span>
+                            <span className="text-sm font-bold text-white tabular-nums">
+                                {Math.floor(graphData.reduce((acc, curr) => acc + (curr.time_spent || 0), 0) / 60)}m
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                            <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Active Research Session</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0">
                 <ResizablePanel className="relative overflow-hidden">
                     <div ref={containerRef} className="h-full w-full bg-[#0a0a0a] relative overflow-hidden">
@@ -333,6 +288,7 @@ const Page = () => {
                     <div className="h-full bg-card/30 backdrop-blur-2xl flex flex-col overflow-hidden border-l border-border/10">
                         {selectedNode ? (
                             <SubjectDetails 
+                                key={selectedNode.id}
                                 selectedNode={selectedNode}
                                 historyLength={history.length}
                                 setSelectedNode={setSelectedNode}

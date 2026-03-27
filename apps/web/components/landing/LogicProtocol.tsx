@@ -44,49 +44,81 @@ const BentoCard = ({ children, className = "", title, description, accentColor =
 
 const MathPlotter = () => {
     return (
-        <div className="relative w-full h-full flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-blue-500/2 blur-[60px] rounded-full scale-125 transition-opacity" />
-            <div className="relative w-full h-24 border-l border-b border-zinc-800/80">
-               <div className="absolute inset-0 grid grid-cols-6 grid-rows-3 opacity-10 pointer-events-none">
-                  {Array.from({length: 18}).map((_, i) => <div key={i} className="border border-zinc-700" />)}
-               </div>
-               
-               <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible">
-                  <motion.path
-                    d="M 0 20 Q 25 0, 50 20 T 100 20"
-                    fill="none"
-                    stroke="rgba(59,130,246,0.8)"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  />
-               </svg>
+        <div className="relative w-full h-full flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-blue-500/5 blur-[100px] rounded-full scale-150 opacity-40" />
+            
+            <div className="relative w-full h-32">
+                {/* Axis Labels */}
+                <div className="absolute -top-4 left-0 text-[8px] font-black text-blue-500/40 uppercase tracking-widest">f(x) :: Analysis</div>
+                <div className="absolute -bottom-4 right-0 text-[8px] font-black text-blue-500/40 uppercase tracking-widest">Time / Domain</div>
 
-               <div className="absolute -top-6 right-0 text-xl font-bold text-white italic drop-shadow-xl select-none">
-                  <MathJax>{"$y = \\sin(x)$"}</MathJax>
-               </div>
+                {/* Grid */}
+                <div className="absolute inset-0 grid grid-cols-8 grid-rows-4 opacity-10 pointer-events-none">
+                    {Array.from({length: 32}).map((_, i) => <div key={i} className="border-[0.5px] border-blue-500/30" />)}
+                </div>
+
+                {/* Axis */}
+                <div className="absolute left-0 bottom-0 w-full h-px bg-blue-500/20" />
+                <div className="absolute left-0 bottom-0 w-px h-full bg-blue-500/20" />
+                
+                <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible">
+                    {/* Secondary Curves */}
+                    <path d="M 0 35 Q 25 10, 50 35 T 100 35" fill="none" stroke="rgba(59,130,246,0.1)" strokeWidth="0.5" />
+                    
+                    {/* Main Gaussian-style Curve */}
+                    <motion.path
+                        d="M 0 35 Q 20 35, 30 30 Q 50 5, 70 30 Q 80 35, 100 35"
+                        fill="none"
+                        stroke="rgba(59,130,246,0.9)"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 3, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                    />
+
+                    {/* Peak Marker */}
+                    <motion.circle 
+                        cx="50" cy="10" r="1.5"
+                        fill="#fff"
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                </svg>
+
+                <div className="absolute top-0 right-0 p-2 rounded-lg bg-black/40 backdrop-blur-sm border border-blue-500/10 scale-75 origin-top-right">
+                    <MathJax>{"$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$"}</MathJax>
+                </div>
             </div>
         </div>
     )
 }
 
 const LiteratureLibrary = () => (
-    <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+    <div className="relative w-full h-full flex items-center justify-center p-4">
        <div className="absolute inset-0 bg-emerald-500/2 blur-[80px] rounded-full opacity-60" />
-       <div className="relative z-10 flex flex-col gap-2 w-full max-w-[180px]">
+       <div className="relative z-10 grid grid-cols-1 gap-2.5 w-full max-w-[220px]">
           {[
-              { a: "Dostoyevsky", t: "The Idiot" },
-              { a: "Kafka", t: "The Metamorphosis" }
+              { a: "Fyodor Dostoyevsky", t: "Notes from Underground", c: "Existentialism" },
+              { a: "Franz Kafka", t: "The Trial", c: "Absurdism" }
           ].map((book, i) => (
-              <div key={i} className="p-3 rounded-xl bg-white/5 border border-white/10 flex justify-between items-center group/item hover:bg-emerald-500/10 transition-colors">
-                  <div className="space-y-0.5">
-                     <p className="text-[7px] font-bold text-emerald-500 uppercase tracking-widest">{book.a}</p>
-                     <p className="text-[9px] italic font-serif text-white/80">{book.t}</p>
+              <motion.div 
+                key={i} 
+                whileHover={{ x: 5, backgroundColor: "rgba(16,185,129,0.1)" }}
+                className="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex gap-4 items-center group/item transition-all"
+              >
+                  <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                    <BookOpen className="w-4 h-4 text-emerald-500" />
                   </div>
-                  <BookOpen className="w-2.5 h-2.5 text-zinc-700 group-hover/item:text-emerald-500 transition-colors" />
-              </div>
+                  <div className="min-w-0">
+                     <p className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">{book.a}</p>
+                     <p className="text-[11px] font-bold text-white truncate leading-tight mt-0.5">{book.t}</p>
+                     <div className="mt-1.5 px-2 py-0.5 rounded-md bg-white/5 text-[6px] font-bold text-zinc-500 uppercase tracking-tighter inline-block">
+                        {book.c}
+                     </div>
+                  </div>
+              </motion.div>
           ))}
        </div>
     </div>
@@ -94,6 +126,8 @@ const LiteratureLibrary = () => (
 
 const SortVisualization = () => {
     const [arr, setArr] = useState([6, 2, 8, 3, 5])
+    const [swapping, setSwapping] = useState<number[]>([])
+
     useEffect(() => {
         const int = setInterval(() => {
             setArr((prev) => {
@@ -103,35 +137,45 @@ const SortVisualization = () => {
                     const current = next[i];
                     const nextVal = next[i + 1];
                     if (current !== undefined && nextVal !== undefined && current > nextVal) {
+                        setSwapping([i, i + 1])
                         next[i] = nextVal;
                         next[i + 1] = current;
                         swapped = true;
                         break;
                     }
                 }
-                return swapped ? next : [6, 2, 8, 3, 5].sort(() => Math.random() - 0.5);
+                if (!swapped) {
+                    setSwapping([])
+                    return [6, 2, 8, 3, 5].sort(() => Math.random() - 0.5);
+                }
+                return next;
             });
-        }, 1500);
+        }, 1200);
         return () => clearInterval(int);
     }, []);
 
     return (
         <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
-            <div className="flex gap-2">
-                {arr.map((val) => (
+            <div className="flex gap-2.5">
+                {arr.map((val, i) => (
                     <motion.div
                         key={val}
                         layout
-                        transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                        className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center text-xs font-black font-mono text-amber-500 shadow-xl"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        className={`w-12 h-12 rounded-xl border flex items-center justify-center text-xs font-black font-mono shadow-2xl transition-all duration-300 ${
+                            swapping.includes(i) 
+                            ? 'bg-amber-500/20 border-amber-500 text-amber-500 scale-110' 
+                            : 'bg-zinc-900 border-white/5 text-zinc-400'
+                        }`}
                     >
                         {val}
                     </motion.div>
                 ))}
             </div>
-            <div className="mt-6 flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-950 border border-zinc-800 text-[8px] font-mono text-zinc-600">
-                <Terminal className="w-2.5 h-2.5 text-amber-500" />
-                <span>Bubble_Sort::Active</span>
+            <div className="mt-8 flex items-center gap-2.5 px-5 py-2 rounded-2xl bg-zinc-950 border border-zinc-800 text-[9px] font-bold uppercase tracking-widest text-zinc-600">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <Terminal className="w-3 h-3 text-amber-500" />
+                <span>Bubble_Sort::Recursive</span>
             </div>
         </div>
     )
@@ -141,31 +185,40 @@ const SecurityTrick = () => (
     <div className="relative w-full h-full flex items-center justify-center p-4">
        <div className="absolute inset-0 bg-rose-500/2 blur-[80px] rounded-full scale-125 opacity-60" />
        <div className="relative flex items-center justify-center">
-          {[1, 2].map((i) => (
+          {[1, 2, 3].map((i) => (
              <motion.div
                key={i}
-               className="absolute rounded-full border border-rose-500/20"
-               initial={{ width: 40, height: 40, opacity: 0.5 }}
-               animate={{ width: 40 + i * 40, height: 40 + i * 40, opacity: 0 }}
-               transition={{ duration: 3, repeat: Infinity, delay: i * 0.8, ease: "easeOut" }}
+               className="absolute rounded-full border border-rose-500/10"
+               initial={{ width: 60, height: 60, opacity: 0.5 }}
+               animate={{ width: 60 + i * 50, height: 60 + i * 50, opacity: 0 }}
+               transition={{ duration: 4, repeat: Infinity, delay: i * 1, ease: "easeOut" }}
              />
           ))}
-          <ShieldCheck className="w-10 h-10 text-rose-500/80 drop-shadow-[0_0_15px_rgba(244,63,94,0.3)]" />
+          <div className="relative group">
+            <div className="absolute inset-0 bg-rose-500/20 blur-2xl rounded-full" />
+            <ShieldCheck className="relative w-12 h-12 text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-transform group-hover:scale-110" />
+          </div>
        </div>
     </div>
 )
 
 const PhysicsTrick = () => (
     <div className="relative w-full h-full flex items-center justify-center p-4 overflow-hidden">
+       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.1)_0%,transparent_70%)]" />
        <div className="absolute inset-0 opacity-10">
-          {Array.from({length: 12}).map((_, i) => (
-             <motion.div key={i} className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full" style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }} animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 5 }} />
+          {Array.from({length: 20}).map((_, i) => (
+             <motion.div key={i} className="absolute w-0.5 h-0.5 bg-purple-400 rounded-full" style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }} animate={{ opacity: [0.2, 1, 0.2], y: [0, -10, 0] }} transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 5 }} />
           ))}
        </div>
-       <div className="absolute inset-0 bg-purple-500/2 blur-[80px] rounded-full opacity-60 scale-125" />
-       <div className="relative space-y-4 text-center group-hover:scale-110 transition-transform duration-700">
-          <Atom className="w-10 h-10 text-purple-400/80 mx-auto animate-[spin_10s_linear_infinite]" />
-          <div className="text-xl font-black text-white italic leading-none opacity-90">
+       <div className="absolute inset-0 bg-purple-500/2 blur-[100px] rounded-full opacity-60 scale-150" />
+       <div className="relative space-y-5 text-center transition-all duration-700">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          >
+            <Atom className="w-12 h-12 text-purple-400/80 mx-auto" />
+          </motion.div>
+          <div className="text-2xl font-black text-white italic tracking-tighter drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]">
              <MathJax>{"$E=mc^2$"}</MathJax>
           </div>
        </div>
@@ -180,9 +233,9 @@ export function LogicProtocol() {
 
   return (
     <section className="py-20 space-y-12">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 max-w-7xl mx-auto">
         <BentoCard 
-          className="md:col-span-12 lg:col-span-7 h-[280px]"
+          className="md:col-span-12 lg:col-span-7 h-[300px]"
           title="Mathematics"
           description="High-Fidelity Analysis"
           accentColor="blue"
@@ -191,7 +244,7 @@ export function LogicProtocol() {
         </BentoCard>
 
         <BentoCard 
-          className="md:col-span-6 lg:col-span-5 h-[280px]"
+          className="md:col-span-6 lg:col-span-5 h-[300px]"
           title="Literature"
           description="Knowledge Synthesis"
           accentColor="emerald"
@@ -200,7 +253,7 @@ export function LogicProtocol() {
         </BentoCard>
 
         <BentoCard 
-          className="md:col-span-6 lg:col-span-5 h-[240px]"
+          className="md:col-span-6 lg:col-span-5 h-[260px]"
           title="Informatics"
           description="Algorithm Logic"
           accentColor="amber"
@@ -209,7 +262,7 @@ export function LogicProtocol() {
         </BentoCard>
 
         <BentoCard 
-          className="md:col-span-6 lg:col-span-3 h-[240px]"
+          className="md:col-span-6 lg:col-span-3 h-[260px]"
           title="Security"
           description="Integrity"
           accentColor="rose"
@@ -218,7 +271,7 @@ export function LogicProtocol() {
         </BentoCard>
 
         <BentoCard 
-          className="md:col-span-6 lg:col-span-4 h-[240px]"
+          className="md:col-span-6 lg:col-span-4 h-[260px]"
           title="Physics"
           description="Natural Law"
           accentColor="purple"

@@ -87,3 +87,37 @@ async def generate_exercise_content(note_content: str, level: str, type: str):
     except Exception as e:
         print(f"Exercise AI Error: {e}")
         raise e
+
+async def generate_note_summary(content: str):
+    """
+    Generate a concise AI summary of the note content.
+    If content is insufficient, returns a specific JSON error.
+    """
+    prompt = f"""
+    TASK: Generate a concise, 2-3 sentence summary of the following educational content.
+    CONTENT: {content}
+    
+    INSTRUCTIONS:
+    1. QUALITY CHECK: If the CONTENT is empty, too short (less than 30 words), or contains no meaningful educational substance, you MUST return ONLY this JSON: {{"error": "insufficient_content"}}.
+    2. STYLE: Use a professional, academic tone. Be precise.
+    3. FORMAT: Return a single JSON object: {{"summary": "..."}}.
+    """
+    try:
+        response = await client.chat.completions.create(
+            model="failspy/Meta-Llama-3-8B-Instruct-abliterated-v3",
+            messages=[
+                {"role": "system", "content": "You are a concise educational assistant. Return valid JSON."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={ "type": "json_object" },
+            max_tokens=500,
+            stream=True
+        )
+        async def event_generator():
+            async for chunk in response:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        return StreamingResponse(event_generator(), media_type="text/plain")
+    except Exception as e:
+        print(f"Summary AI Error: {e}")
+        raise e

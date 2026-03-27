@@ -1,3 +1,8 @@
+export interface SubNote {
+    id: number;
+    title: string;
+}
+
 export interface Node {
     id: string;
     name: string;
@@ -7,6 +12,12 @@ export interface Node {
         nodes: Node[];
         links: Link[];
     };
+    complexity?: string;
+    time_spent?: number;
+    last_opened?: string;
+    summary?: string;
+    subNotes?: SubNote[];
+    notesCount?: number;
     x?: number;
     y?: number;
 }

@@ -46,13 +46,14 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
                 if (isSelected) return '#fff';
                 return groupColors[(node as any).group] || '#737373';
             }}
-            linkColor={() => '#222'}
-            linkWidth={1.2}
-            linkDirectionalParticles={1}
-            linkDirectionalParticleSpeed={0.005}
+            linkColor={() => '#1a1a1a'}
+            linkWidth={1.5}
+            linkDirectionalParticles={2}
+            linkDirectionalParticleSpeed={0.004}
+            linkDirectionalParticleWidth={2}
             nodeRelSize={4}
-            d3AlphaDecay={0.015}
-            d3VelocityDecay={0.3}
+            d3AlphaDecay={0.01}
+            d3VelocityDecay={0.4}
             onNodeClick={handleNodeClick}
             warmupTicks={100}
             nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -61,35 +62,72 @@ export const KnowledgeGraph: React.FC<KnowledgeGraphProps> = ({
                 const hasSub = !!n.subGraph;
                 const label = n.name;
                 const fontSize = 14 / globalScale;
-                ctx.font = `${isSelected ? '900' : 'bold'} ${fontSize}px Inter, sans-serif`;
-                
                 const r = Math.sqrt(n.val || 4) * 2.5;
-                
-                if (hasSub) {
-                    ctx.beginPath();
-                    ctx.arc(n.x, n.y, r + (4/globalScale), 0, 2 * Math.PI);
-                    ctx.strokeStyle = (groupColors[n.group] || '#737373') + '44';
-                    ctx.lineWidth = 2 / globalScale;
-                    ctx.stroke();
+                const color = groupColors[n.group] || '#737373';
+
+                // Calculate "Aging" - if not opened for a long time, fade the node slightly
+                let opacity = 1;
+                if (n.last_opened) {
+                    const last = new Date(n.last_opened).getTime();
+                    const now = Date.now();
+                    const diffDays = (now - last) / (1000 * 60 * 60 * 24);
+                    if (diffDays > 3) opacity = 0.6; // Node is "stale"
+                    if (diffDays > 7) opacity = 0.3; // Node is "forgotten"
                 }
 
+                ctx.save();
+                ctx.globalAlpha = opacity;
+
+                // Subtle Outer Glow for all nodes
                 ctx.beginPath();
-                ctx.arc(n.x, n.y, r, 0, 2 * Math.PI, false);
-                
-                if (isSelected) {
-                    ctx.shadowColor = '#fff';
-                    ctx.shadowBlur = 20;
-                }
-
-                ctx.fillStyle = isSelected ? '#fff' : (groupColors[n.group] || '#737373');
+                ctx.arc(n.x, n.y, r + (2/globalScale), 0, 2 * Math.PI);
+                ctx.shadowColor = color;
+                ctx.shadowBlur = isSelected ? 30 : 10;
+                ctx.fillStyle = isSelected ? 'rgba(255,255,255,0.1)' : color + '22';
                 ctx.fill();
                 ctx.shadowBlur = 0;
 
-                if (globalScale > 0.6 || isSelected) {
+                // Cluster Ring
+                if (hasSub) {
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, r + (5/globalScale), 0, 2 * Math.PI);
+                    ctx.strokeStyle = color + '66';
+                    ctx.lineWidth = 1.5 / globalScale;
+                    ctx.setLineDash([2, 2]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Core Node
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r, 0, 2 * Math.PI, false);
+                ctx.fillStyle = isSelected ? '#fff' : color;
+                ctx.fill();
+
+                // Stale Indicator (Subtle ring if forgotten)
+                if (opacity < 1) {
+                    ctx.beginPath();
+                    ctx.arc(n.x, n.y, r + (3/globalScale), 0, 2 * Math.PI);
+                    ctx.strokeStyle = '#ef4444' + (opacity < 0.5 ? '44' : '22');
+                    ctx.lineWidth = 1 / globalScale;
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+
+                // Label
+                if (globalScale > 0.5 || isSelected) {
+                    ctx.font = `${isSelected ? '900' : '600'} ${fontSize}px "SF Pro Display", "Inter", sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = isSelected ? '#fff' : 'rgba(255, 255, 255, 0.7)';
-                    ctx.fillText(label, n.x, n.y + r + (12/globalScale));
+                    
+                    // Draw text shadow for better legibility on dark bg
+                    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                    ctx.shadowBlur = 4;
+                    
+                    ctx.fillStyle = isSelected ? '#fff' : 'rgba(255, 255, 255, 0.85)';
+                    ctx.fillText(label, n.x, n.y + r + (14/globalScale));
+                    ctx.shadowBlur = 0;
                 }
             }}
         />

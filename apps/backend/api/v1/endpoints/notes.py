@@ -4,7 +4,7 @@ from db.models import User, Notes, SubNotes, note_links
 from utils.utils import get_current_user, get_db, extract_image_urls
 from utils.s3 import upload_file_to_s3, delete_file_from_s3
 from sqlalchemy.orm import Session
-from services.ai_service import generate_roadmap_content, generate_exercise_content
+from services.ai_service import generate_roadmap_content, generate_exercise_content, generate_note_summary
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -53,12 +53,32 @@ async def generate_exercise(
     content_str = json.dumps(note.content, ensure_ascii=False) if note.content else note.title
     return await generate_exercise_content(content_str, level, type)
 
+@router.post("/{note_id}/generate-summary")
+async def generate_summary(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    note = db.query(Notes).filter(Notes.id == note_id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    import json
+    content_str = json.dumps(note.content, ensure_ascii=False) if note.content else ""
+    return await generate_note_summary(content_str)
+
 @router.post("/generate-random-exercise")
 async def generate_random_exercise(
     topic: str,
     level: str = "foundational",
     current_user: User = Depends(get_current_user)
 ):
+    if len(topic.strip()) < 3:
+        import json
+        async def err_gen():
+            yield json.dumps({"error": "insufficient_content"})
+        return StreamingResponse(err_gen(), media_type="text/plain")
+        
     return await generate_exercise_content(f"Topic: {topic}. Generate random high-quality challenging questions.", level, "quiz")
 
 @router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
@@ -95,6 +115,25 @@ async def update_note(id: int, data: NoteToEdit, db: Session = Depends(get_db), 
         note.preview = data.preview
     if data.accentColor:
         note.accentColor = data.accentColor
+    if data.complexity:
+        note.complexity = data.complexity
+    if data.summary:
+        note.summary = data.summary
+    db.commit()
+    db.refresh(note)
+    return note
+
+@router.patch("/{id}/stats", response_model=Note)
+async def update_note_stats(id: int, data: NoteStatsUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    note = db.query(Notes).filter(Notes.id == id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    if data.time_spent is not None:
+        note.time_spent += data.time_spent
+    if data.last_opened:
+        note.last_opened = data.last_opened
+    if data.complexity:
+        note.complexity = data.complexity
     db.commit()
     db.refresh(note)
     return note
@@ -122,6 +161,10 @@ async def get_graph_data(db: Session = Depends(get_db), current_user: User = Dep
             "updatedAt": note.updatedAt,
             "accentColor": note.accentColor,
             "type": note.type,
+            "complexity": note.complexity,
+            "time_spent": note.time_spent,
+            "last_opened": note.last_opened,
+            "summary": note.summary,
             "subNotes": note.subnotes,
             "links": all_links,
         }
@@ -152,7 +195,7 @@ def create_subnote(
         raise HTTPException(status_code=404, detail="Note not found")
     if db.query(SubNotes).filter(SubNotes.note_id == page_id, SubNotes.title == data.title).first():
         raise HTTPException(status_code=400, detail="Subnote with this title already exists")
-    new_subnote = SubNotes(note_id=page_id, title=data.title, content=data.content)
+    new_subnote = SubNotes(note_id=page_id, title=data.title, content=data.content, summary=data.summary)
     note.notesCount += 1
     db.add(new_subnote)
     db.commit()
@@ -215,6 +258,26 @@ async def update_subnote(page_id: int, subnote_id: int, data: SubNoteToEdit, db:
         subnote.content = data.content
     if data.title:
         subnote.title = data.title
+    if data.summary is not None:
+        subnote.summary = data.summary
     db.commit()
     db.refresh(subnote)
     return subnote
+
+@router.post("/{page_id}/subnotes/{subnote_id}/generate-summary")
+async def generate_subnote_summary(
+    page_id: int,
+    subnote_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    note = db.query(Notes).filter(Notes.id == page_id, Notes.user_id == current_user.id).first()
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    subnote = db.query(SubNotes).filter(SubNotes.id == subnote_id, SubNotes.note_id == page_id).first()
+    if not subnote:
+        raise HTTPException(status_code=404, detail="Subnote not found")
+    
+    import json
+    content_str = json.dumps(subnote.content, ensure_ascii=False) if subnote.content else ""
+    return await generate_note_summary(content_str)

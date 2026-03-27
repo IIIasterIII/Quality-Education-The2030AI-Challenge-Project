@@ -227,3 +227,44 @@ export async function generateRandomExercise(topic: string, level: string, onChu
         console.log("Error generating random exercise", err)
     }
 }
+
+export async function updateNoteStats(id: string, data: { time_spent?: number, last_opened?: string, complexity?: string }) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${id}/stats`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (err) {
+        console.log("Error updating note stats", err)
+        return null
+    }
+}
+
+export async function generateNoteSummary(id: string) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/${id}/generate-summary`, {
+            method: "POST",
+            credentials: "include",
+        })
+        if (!response.ok) return null
+        
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        if (!reader) return null
+
+        let result = ""
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            result += decoder.decode(value)
+        }
+        return JSON.parse(result)
+    } catch (err) {
+        console.log("Error generating summary", err)
+        return null
+    }
+}

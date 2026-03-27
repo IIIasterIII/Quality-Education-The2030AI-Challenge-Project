@@ -78,6 +78,11 @@ class Notes(Base):
     accentColor = Column(String(255), nullable=False)
     type = Column(String(50), nullable=False)
     content = Column(JSON, nullable=True)
+    complexity = Column(String(50), nullable=False, default="beginner")
+    time_spent = Column(Integer, nullable=False, default=0)
+    last_opened = Column(DateTime(timezone=True), nullable=True)
+    summary = Column(Text, nullable=True)
+
     user_id = Column(Integer, ForeignKey('users.id', ondelete="CASCADE"), nullable=False)
     user = relationship("User", back_populates="notes")
     related_notes = relationship(
@@ -94,5 +99,6 @@ class SubNotes(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(255), nullable=False)
     content = Column(JSON, nullable=True)
+    summary = Column(Text, nullable=True)
     note_id = Column(Integer, ForeignKey("notes.id", ondelete="CASCADE"), nullable=False)
     parent_note = relationship("Notes", back_populates="subnotes")

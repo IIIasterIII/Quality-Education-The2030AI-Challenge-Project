@@ -1,6 +1,6 @@
 "use client"
 import React, { useState, useEffect, useMemo } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Brain, 
@@ -47,8 +47,10 @@ interface ExerciseData {
 
 const ExerciseLab = () => {
     const params = useParams()
+    const searchParams = useSearchParams()
     const router = useRouter()
     const id = params.id as string
+    const topicParam = searchParams.get('topic')
     
     const [note, setNote] = useState<any>(null)
     const [status, setStatus] = useState<'selecting' | 'generating' | 'active' | 'finished'>('selecting')
@@ -62,8 +64,12 @@ const ExerciseLab = () => {
     const { showToast, ToastComponent } = useToast()
 
     useEffect(() => {
-        if (id && id !== 'random') getSingleNote(id).then(setNote)
-    }, [id])
+        if (id && id !== 'random') {
+            getSingleNote(id).then(setNote)
+        } else if (id === 'random' && topicParam) {
+            setNote({ title: topicParam })
+        }
+    }, [id, topicParam])
 
     const isNoteEmpty = () => {
         if (!note) return true
@@ -99,7 +105,7 @@ const ExerciseLab = () => {
                 const parsed = JSON.parse(repaired)
                 
                 if (parsed.error === 'insufficient_content') {
-                    showToast("Not enough context! Add more content to your note to generate specific exercises.", "warning")
+                    showToast("Insufficient Context! Add more content to your note, or ensure the topic is a valid educational concept (not a placeholder like 'asd1').", "warning")
                     setStatus('selecting')
                     return
                 }
