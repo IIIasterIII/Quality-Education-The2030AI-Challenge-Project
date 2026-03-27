@@ -18,30 +18,11 @@ interface RoadmapSettingsDialogProps {
     onUpdate: (updatedRoadmap: RoadMap) => void
 }
 
-export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({
-    roadmap,
-    open,
-    onOpenChange,
-    onUpdate
-}) => {
+export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ roadmap, open, onOpenChange, onUpdate }) => {
     const [isPublic, setIsPublic] = useState(roadmap.is_public || false)
-    const [tags, setTags] = useState<string[]>(roadmap.tags || [])
-    const [tagInput, setTagInput] = useState("")
     const [loading, setLoading] = useState(false)
     const { showToast } = useToast()
-
-    const handleAddTag = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && tagInput.trim()) {
-            if (!tags.includes(tagInput.trim())) {
-                setTags([...tags, tagInput.trim()])
-            }
-            setTagInput("")
-        }
-    }
-
-    const removeTag = (tagToRemove: string) => {
-        setTags(tags.filter(t => t !== tagToRemove))
-    }
+    const tags : string[] = [] 
 
     const handleSave = async () => {
         setLoading(true)
@@ -81,35 +62,6 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({
                             checked={isPublic}
                             onCheckedChange={setIsPublic}
                         />
-                    </div>
-
-                    <div className="space-y-3">
-                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                            <TagIcon className="w-3 h-3" /> Search Tags
-                        </Label>
-                        <div className="flex flex-wrap gap-2">
-                            {tags.map(tag => (
-                                <Badge key={tag} variant="secondary" className="gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium">
-                                    {tag}
-                                    <button 
-                                        onClick={() => removeTag(tag)} 
-                                        className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                </Badge>
-                            ))}
-                        </div>
-                        {tags.length < 5 && (
-                            <Input 
-                                placeholder="Add a tag..." 
-                                className="h-9 text-sm"
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyDown={handleAddTag}
-                            />
-                        )}
-                        <p className="text-[11px] text-muted-foreground">Up to 5 tags to help others find your path.</p>
                     </div>
                 </div>
 
