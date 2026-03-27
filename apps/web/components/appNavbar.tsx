@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { useAppSelector } from "@/app/store/hooks"
 import { cn } from "@workspace/ui/lib/utils"
 import { UserAvatar } from "./userAvatar"
-import { Menu } from "lucide-react"
+import { Menu, Infinity } from "lucide-react"
 import Link from "next/link"
 
 
@@ -28,12 +28,14 @@ export function AppNavbar() {
         backdrop-blur-xl supports-backdrop-filter:bg-background/60">
             <div className="h-16 flex items-center justify-between w-full max-w-7xl mx-auto px-6">
 
-                <Link href="/" className="flex items-center space-x-2 group">
-                    <span className="font-bold tracking-tight text-xl bg-clip-text text-transparent 
-                    bg-linear-to-r from-foreground to-foreground/70 group-hover:from-primary group-hover:to-primary/70 transition-all duration-300">
-                        App
-                    </span>
+                <div className="flex items-center gap-8">
+                <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+                    <Infinity className="w-5 h-5 text-black fill-black" />
+                    </div>
+                    <span className="font-bold text-xl tracking-tight text-white uppercase italic">Cognito</span>
                 </Link>
+                </div>
 
                 <div className="hidden md:flex flex-1 justify-center">
                     <NavigationMenu>

@@ -1,23 +1,29 @@
-import { Button } from "@workspace/ui/components/button"
+"use client"
+import React from 'react'
 import { Navbar } from "@/components/navbar"
+import { Hero } from "@/components/landing/Hero"
+import { LandingCapabilities } from "@/components/landing/LandingCapabilities"
+import { LandingWorkflow } from "@/components/landing/LandingWorkflow"
+import { LogicProtocol } from "@/components/landing/LogicProtocol"
+import { LandingCTA } from "@/components/landing/LandingCTA"
+import { LandingFooter } from "@/components/landing/LandingFooter"
 
-export default function Page() {
+export default function LandingPage() {
   return (
-    <>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 selection:bg-white selection:text-black font-sans overflow-x-hidden">
       <Navbar />
-      <div className="flex min-h-svh p-6">
-        <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-          <div>
-            <h1 className="font-medium">Project ready!</h1>
-            <p>You may now add components and start building.</p>
-            <p>We&apos;ve already added the button component for you.</p>
-            <Button className="mt-2">Button</Button>
-          </div>
-          <div className="text-muted-foreground font-mono text-xs">
-            (Press <kbd>d</kbd> to toggle dark mode)
-          </div>
+      
+      <main className="pt-32 pb-40 px-6 relative">
+        <div className="max-w-6xl mx-auto space-y-40">
+          <Hero />
+          <LandingCapabilities />
+          <LandingWorkflow />
+          <LogicProtocol />
+          <LandingCTA />
         </div>
-      </div>
-    </>
+      </main>
+
+      <LandingFooter />
+    </div>
   )
 }

@@ -5,6 +5,7 @@ from api.v1.endpoints.auth import router as auth_router
 from api.v1.endpoints.roadMaps import router as roadmaps_router
 from api.v1.endpoints.notes import router as notes_router
 from api.v1.endpoints.users import router as users_router
+from api.v1.endpoints.ingestion import router as ingestion_router
 from utils.utils import init_firebase
 import uvicorn
 
@@ -15,6 +16,7 @@ app.include_router(auth_router)
 app.include_router(roadmaps_router)
 app.include_router(notes_router)
 app.include_router(users_router)
+app.include_router(ingestion_router)
 
 origins = ["http://localhost:3000"]
 

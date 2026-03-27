@@ -17,7 +17,7 @@ import { useNote } from "@/context/NoteContext"
 import { ImageWizard } from "@/components/knowledge-node/ImageWizard"
 import { RichEditor } from "@/components/knowledge-node/RichEditor"
 import { Mark, mergeAttributes } from '@tiptap/core'
-import { Anchor as AnchorIcon, Cloud, CloudOff, Loader2, Zap } from "lucide-react"
+import { Anchor as AnchorIcon, Cloud, CloudOff, Loader2, Infinity } from "lucide-react"
 import { useRouter } from 'next/navigation'
 import { editNote, getSingleNote, uploadNoteImage } from "@/app/api/notes"
 import { compressImage, MAX_FILE_SIZE } from "@/app/utils/image"
@@ -356,7 +356,7 @@ const SubjectNodePage = () => {
                                 onClick={() => router.push(`/app/exercise/${id}`)}
                                 className="w-full flex items-center gap-3 p-1.5 rounded-lg hover:bg-primary/20 bg-primary/10 text-primary transition-all overflow-hidden group/btn border border-primary/20"
                             >
-                                <Zap className="w-5 h-5 shrink-0 animate-pulse" />
+                                <Infinity className="w-5 h-5 shrink-0 animate-pulse" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden group-hover:block whitespace-nowrap">Run Exercise</span>
                             </button>
 

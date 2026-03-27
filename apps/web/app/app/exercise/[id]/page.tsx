@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     Brain, 
-    Zap, 
+    Infinity, 
     Target, 
     ChevronRight, 
     ArrowLeft, 
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { MathJax, MathJaxContext } from 'better-react-mathjax'
 import { Button } from '@workspace/ui/components/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@workspace/ui/components/card'
+import { Card } from '@workspace/ui/components/card'
 import { generateExercise, generateRandomExercise, getSingleNote } from '@/app/api/notes'
 import { useToast } from '@/components/toast'
 
@@ -183,7 +183,7 @@ const ExerciseLab = () => {
                                         <div className="grid grid-cols-1 gap-2">
                                             {[
                                                 { id: 'foundational', label: 'Foundational', icon: Atom },
-                                                { id: 'advanced', label: 'Advanced', icon: Zap },
+                                                { id: 'advanced', label: 'Advanced', icon: Infinity },
                                                 { id: 'expert', label: 'Expert', icon: Brain }
                                             ].map(lvl => (
                                                 <button 

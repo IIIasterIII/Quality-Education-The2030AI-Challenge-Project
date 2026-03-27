@@ -16,3 +16,5 @@ websockets
 pydantic[email]
 aioboto3
 openai
+youtube-transcript-api
+PyMuPDF
