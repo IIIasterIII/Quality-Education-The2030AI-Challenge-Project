@@ -5,7 +5,8 @@ import { Hero } from "@/components/landing/Hero"
 import { LandingCapabilities } from "@/components/landing/LandingCapabilities"
 import { LandingWorkflow } from "@/components/landing/LandingWorkflow"
 import { LogicProtocol } from "@/components/landing/LogicProtocol"
-import { LandingCTA } from "@/components/landing/LandingCTA"
+import { LandingSpotlight } from "@/components/landing/LandingSpotlight"
+import { LandingStats } from "@/components/landing/LandingStats"
 import { LandingFooter } from "@/components/landing/LandingFooter"
 
 export default function LandingPage() {
@@ -16,10 +17,11 @@ export default function LandingPage() {
       <main className="pt-32 pb-40 px-6 relative">
         <div className="max-w-6xl mx-auto space-y-40">
           <Hero />
-          <LandingCapabilities />
-          <LandingWorkflow />
-          <LogicProtocol />
-          <LandingCTA />
+          <LandingStats />
+          <div id="ecosystem"><LandingCapabilities /></div>
+          <div id="spotlight"><LandingSpotlight /></div>
+          <div id="process"><LandingWorkflow /></div>
+          <div id="logic"><LogicProtocol /></div>
         </div>
       </main>
 

@@ -3,7 +3,7 @@ uvicorn
 pydantic
 sqlalchemy
 python-dotenv
-pymysql
+psycopg2-binary
 greenlet
 alembic
 firebase-admin

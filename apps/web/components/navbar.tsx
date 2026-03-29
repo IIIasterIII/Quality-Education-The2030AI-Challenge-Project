@@ -1,4 +1,5 @@
 "use client"
+import React from "react"
 import { NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle, NavigationMenu } from "@workspace/ui/components/navigation-menu"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@workspace/ui/components/sheet"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -16,13 +17,27 @@ export function Navbar() {
   const user = useAppSelector((state) => state.user)
 
   const navLinks = [
-    { title: "Network", href: "/app/subjects" },
-    { title: "Roadmap", href: "/app/roadmap" },
-    { title: "Exercise Lab", href: "/app/exercise" },
+    { title: "Ecosystem", href: "#ecosystem" },
+    { title: "Spotlight", href: "#spotlight" },
+    { title: "Methodology", href: "#process" },
+    { title: "Verification", href: "#logic" },
   ]
 
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement, MouseEvent>, href: string) => {
+    if (href.startsWith("#") && pathname === "/") {
+      e.preventDefault()
+      const element = document.getElementById(href.slice(1))
+      if (element) {
+        window.scrollTo({
+          top: element.offsetTop - 100,
+          behavior: "smooth"
+        })
+      }
+    }
+  }
+
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl supports-backdrop-filter:bg-zinc-950/60 transition-all">
+    <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl supports-backdrop-filter:bg-zinc-950/60 transition-all select-none">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         
         <div className="flex items-center gap-8">
@@ -43,11 +58,13 @@ export function Navbar() {
                                 asChild
                                 className={cn(
                                     navigationMenuTriggerStyle(),
-                                    "relative h-9 px-4 py-2 bg-transparent hover:bg-zinc-900/50 hover:text-white focus:bg-transparent duration-300 transition-all cursor-pointer text-zinc-400 font-medium text-[11px] uppercase tracking-widest",
-                                    pathname === link.href && "text-white after:absolute after:bottom-0 after:left-4 after:right-4 after:h-px after:bg-white"
+                                    "relative h-9 px-4 py-2 bg-transparent hover:bg-zinc-900/50 hover:text-white focus:bg-transparent duration-300 transition-all cursor-pointer text-zinc-400 font-medium text-[11px] uppercase tracking-widest"
                                 )}
                             >
-                                <Link href={link.href}>
+                                <Link 
+                                    href={link.href}
+                                    onClick={(e) => handleScroll(e, link.href)}
+                                >
                                     {link.title}
                                 </Link>
                             </NavigationMenuLink>
@@ -89,6 +106,7 @@ export function Navbar() {
                     <Link 
                       key={link.href} 
                       href={link.href}
+                      onClick={(e) => handleScroll(e as any, link.href)}
                       className="text-sm font-medium text-zinc-400 hover:text-white p-3 rounded-xl transition-colors hover:bg-zinc-900"
                     >
                       {link.title}

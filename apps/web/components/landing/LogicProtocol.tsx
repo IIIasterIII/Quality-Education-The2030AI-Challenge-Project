@@ -27,7 +27,9 @@ const BentoCard = ({ children, className = "", title, description, accentColor =
   const accentClass = (accentClasses[accentColor as keyof typeof accentClasses] || accentClasses.blue) as string;
 
   return (
-    <div className={`relative group h-full rounded-[32px] bg-zinc-950/40 border border-white/5 overflow-hidden p-6 md:p-8 flex flex-col transition-all duration-500 hover:bg-zinc-950/70 hover:border-white/10 ${accentClass} ${className}`}>
+    <div className={`relative group h-full rounded-[32px] bg-zinc-950/40 
+      border select-none border-white/5 overflow-hidden p-6 md:p-8 flex flex-col transition-all
+      duration-500 hover:bg-zinc-950/70 hover:border-white/10 ${accentClass} ${className}`}>
       <div className="relative z-10 space-y-1.5 mb-4 pointer-events-none">
         <h3 className={`text-lg md:text-xl font-bold text-white tracking-widest uppercase italic underline underline-offset-4 transition-all decoration-2 ${accentClass.split(' ')[0]}`}>
           {title}
@@ -44,50 +46,63 @@ const BentoCard = ({ children, className = "", title, description, accentColor =
 
 const MathPlotter = () => {
     return (
-        <div className="relative w-full h-full flex items-center justify-center p-6">
-            <div className="absolute inset-0 bg-blue-500/5 blur-[100px] rounded-full scale-150 opacity-40" />
-            
-            <div className="relative w-full h-32">
-                {/* Axis Labels */}
-                <div className="absolute -top-4 left-0 text-[8px] font-black text-blue-500/40 uppercase tracking-widest">f(x) :: Analysis</div>
-                <div className="absolute -bottom-4 right-0 text-[8px] font-black text-blue-500/40 uppercase tracking-widest">Time / Domain</div>
-
-                {/* Grid */}
-                <div className="absolute inset-0 grid grid-cols-8 grid-rows-4 opacity-10 pointer-events-none">
-                    {Array.from({length: 32}).map((_, i) => <div key={i} className="border-[0.5px] border-blue-500/30" />)}
+        <div className="relative w-full h-full flex items-center justify-center p-8">
+            <div className="relative w-full aspect-2/1 max-h-[180px]">
+                <div className="absolute -top-6 left-0 text-[9px] font-black text-blue-500/40 uppercase tracking-widest flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
+                    Function Analysis : Gaussian
+                </div>
+                <div className="absolute -bottom-6 right-0 text-[9px] font-black text-blue-500/40 uppercase tracking-widest">
+                    Domain [t]
                 </div>
 
-                {/* Axis */}
-                <div className="absolute left-0 bottom-0 w-full h-px bg-blue-500/20" />
-                <div className="absolute left-0 bottom-0 w-px h-full bg-blue-500/20" />
-                
-                <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible">
-                    {/* Secondary Curves */}
-                    <path d="M 0 35 Q 25 10, 50 35 T 100 35" fill="none" stroke="rgba(59,130,246,0.1)" strokeWidth="0.5" />
-                    
-                    {/* Main Gaussian-style Curve */}
+                <div className="absolute inset-0 border-l border-b border-white/10">
+                    <div className="absolute inset-0 grid grid-cols-6 grid-rows-4 opacity-10 pointer-events-none">
+                        {Array.from({length: 24}).map((_, i) => <div key={i} className="border-[0.5px] border-blue-500/30" />)}
+                    </div>
+                </div>
+
+                <svg viewBox="0 0 100 40" className="w-full h-full overflow-visible translate-y-px">
+                    <defs>
+                        <linearGradient id="plotGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="rgba(59,130,246,0.3)" />
+                            <stop offset="100%" stopColor="transparent" />
+                        </linearGradient>
+                    </defs>
+
                     <motion.path
-                        d="M 0 35 Q 20 35, 30 30 Q 50 5, 70 30 Q 80 35, 100 35"
-                        fill="none"
-                        stroke="rgba(59,130,246,0.9)"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: 1 }}
-                        transition={{ duration: 3, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                        d="M 0 40 Q 50 10, 100 40 L 100 40 L 0 40 Z"
+                        fill="url(#plotGradient)"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 1.5 }}
                     />
 
-                    {/* Peak Marker */}
+                    <motion.path
+                        d="M 0 40 Q 50 10, 100 40"
+                        fill="none"
+                        stroke="rgba(59,130,246,0.8)"
+                        strokeWidth="1.2"
+                        strokeLinecap="round"
+                        initial={{ pathLength: 0 }}
+                        whileInView={{ pathLength: 1 }}
+                        transition={{ duration: 2, ease: "easeInOut" }}
+                    />
+
                     <motion.circle 
-                        cx="50" cy="10" r="1.5"
+                        r="1.2"
                         fill="#fff"
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1.5, 0.5] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        animate={{ 
+                            cx: [0, 50, 100], 
+                            cy: [40, 10, 40],
+                            opacity: [0, 1, 0]
+                        }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                        className="shadow-[0_0_10px_#fff]"
                     />
                 </svg>
 
-                <div className="absolute top-0 right-0 p-2 rounded-lg bg-black/40 backdrop-blur-sm border border-blue-500/10 scale-75 origin-top-right">
+                <div className="absolute top-0 right-0 p-3 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 scale-90 origin-top-right shadow-2xl">
                     <MathJax>{"$\\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi}$"}</MathJax>
                 </div>
             </div>
@@ -106,7 +121,7 @@ const LiteratureLibrary = () => (
               <motion.div 
                 key={i} 
                 whileHover={{ x: 5, backgroundColor: "rgba(16,185,129,0.1)" }}
-                className="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex gap-4 items-center group/item transition-all"
+                className="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex gap-4 items-center group/item transition-all select-none"
               >
                   <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
                     <BookOpen className="w-4 h-4 text-emerald-500" />
@@ -114,7 +129,7 @@ const LiteratureLibrary = () => (
                   <div className="min-w-0">
                      <p className="text-[7px] font-black text-emerald-500 uppercase tracking-widest">{book.a}</p>
                      <p className="text-[11px] font-bold text-white truncate leading-tight mt-0.5">{book.t}</p>
-                     <div className="mt-1.5 px-2 py-0.5 rounded-md bg-white/5 text-[6px] font-bold text-zinc-500 uppercase tracking-tighter inline-block">
+                     <div className="mt-1.5 px-2 py-0.5 rounded-md bg-white/5 text-[15px] font-bold text-zinc-300 inline-block">
                         {book.c}
                      </div>
                   </div>

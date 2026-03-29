@@ -52,3 +52,16 @@ export async function getMe() {
         return null
     }
 }
+
+export async function getStats() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/v1/stats`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (error) {
+        return null
+    }
+}
