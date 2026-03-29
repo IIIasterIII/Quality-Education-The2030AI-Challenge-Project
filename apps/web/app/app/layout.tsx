@@ -4,7 +4,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     return (
         <div className="h-screen flex flex-col selection:bg-primary/10 overflow-hidden">
             <AppNavbar />
-            {children}
+            <main className="flex-1 overflow-y-auto">
+                {children}
+            </main>
         </div>
     )
 }

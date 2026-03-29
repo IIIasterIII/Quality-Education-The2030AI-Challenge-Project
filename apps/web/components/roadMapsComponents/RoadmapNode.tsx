@@ -27,25 +27,31 @@ export const RoadmapNode = ({ data, selected }: { data: NodeData, selected: bool
     const hasCustomHandles = data.customHandles && data.customHandles.length > 0;
 
     return (
-        <div className={`px-6 py-5 min-w-[240px] rounded-2xl border transition-all duration-500 group
+        <div className={`px-7 py-6 min-w-[280px] rounded-3xl border-2 transition-all duration-700 relative group
             ${isCompleted 
-                ? 'border-primary/40 bg-primary/5 shadow-[0_0_20px_rgba(113,253,100,0.05)]' 
-                : 'border-white/10 bg-card/40 backdrop-blur-2xl'} 
+                ? 'border-primary/50 bg-primary/10 shadow-[0_0_40px_rgba(113,253,100,0.15)] ring-1 ring-primary/20' 
+                : 'border-white/5 bg-zinc-950/60 backdrop-blur-3xl shadow-2xl'} 
             ${selected 
-                ? 'ring-2 ring-primary/40 border-primary shadow-[0_0_30px_rgba(113,253,100,0.1)]' 
+                ? 'border-primary shadow-[0_0_50px_rgba(113,253,100,0.25)] scale-[1.02]' 
                 : 'hover:border-white/20'}`}>
             
-            <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-4">
-                    <span className="text-sm font-bold tracking-tight text-white/90">{data.label}</span>
+            {/* Subtle Neon Accents */}
+            <div className={`absolute top-0 left-1/2 -translate-x-1/2 -translate-y-px h-px w-1/3 bg-linear-to-r from-transparent via-primary/60 to-transparent transition-opacity duration-700 ${isCompleted ? 'opacity-100' : 'opacity-0'}`} />
+            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-px h-px w-1/3 bg-linear-to-r from-transparent via-primary/60 to-transparent transition-opacity duration-700 ${isCompleted ? 'opacity-100' : 'opacity-0'}`} />
+
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-6">
+                    <span className={`text-sm font-black uppercase tracking-wider text-white transition-colors duration-500 ${isCompleted ? 'text-primary' : ''}`}>{data.label}</span>
                     {isCompleted && (
-                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center border border-primary/20">
-                            <Check size={12} className="text-primary" />
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_15px_rgba(113,253,100,0.3)] animate-in zoom-in-50 duration-500">
+                            <Check size={14} className="text-primary stroke-[4px]" />
                         </div>
                     )}
                 </div>
                 {data.description && (
-                   <span className="text-[10px] text-muted-foreground/60 leading-relaxed line-clamp-2 font-medium">{data.description}</span>
+                   <span className="text-[11px] text-zinc-500 leading-relaxed font-bold uppercase tracking-tight opacity-70 group-hover:opacity-100 transition-opacity duration-500">
+                       {data.description}
+                   </span>
                 )}
             </div>
 

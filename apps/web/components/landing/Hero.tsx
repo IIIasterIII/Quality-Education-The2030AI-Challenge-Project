@@ -9,7 +9,6 @@ export function Hero() {
 
   return (
     <div className="max-w-4xl space-y-10 mx-auto">
-
       <h1 className='text-4xl font-bold text-center'>
         Stop simply consuming content. <br/>
         Transform lectures, videos, and presentations <br/>

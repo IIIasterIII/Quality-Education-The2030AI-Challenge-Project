@@ -4,7 +4,7 @@ from db.models import User, Notes, SubNotes, note_links
 from utils.utils import get_current_user, get_db, extract_image_urls
 from utils.s3 import upload_file_to_s3, delete_file_from_s3
 from sqlalchemy.orm import Session
-from services.ai_service import generate_roadmap_content, generate_exercise_content, generate_note_summary
+from services.ai_service import generate_roadmap_content, generate_exercise_content, generate_note_summary, refine_note_content
 
 router = APIRouter(prefix="/notes", tags=["notes"])
 
@@ -80,6 +80,10 @@ async def generate_random_exercise(
         return StreamingResponse(err_gen(), media_type="text/plain")
         
     return await generate_exercise_content(f"Topic: {topic}. Generate random high-quality challenging questions.", level, "quiz")
+
+@router.post("/refine")
+async def refine_note(content: str, current_user: User = Depends(get_current_user)):
+    return await refine_note_content(content)
 
 @router.delete('/', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_note(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

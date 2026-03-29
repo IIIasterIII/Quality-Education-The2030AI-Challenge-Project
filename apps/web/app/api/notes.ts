@@ -92,6 +92,46 @@ export async function uploadNoteImage(file: File) {
     }
 }
 
+export async function uploadPDF(file: File) {
+    try {
+        const formData = new FormData()
+        formData.append("file", file)
+        const response = await fetch(`${BACKEND_URL}/ingestion/pdf`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+        })
+        if (!response.ok) return null
+        return await response.json()
+    } catch (err) {
+        console.log("Error uploading PDF", err)
+        return null
+    }
+}
+
+export async function refineNoteContent(content: string, onChunk: (chunk: string) => void) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/notes/refine?content=${encodeURIComponent(content)}`, {
+            method: 'POST',
+            credentials: 'include',
+        })
+        if (!response.ok) return null
+        
+        const reader = response.body?.getReader()
+        const decoder = new TextDecoder()
+        if (!reader) return null
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            const chunk = decoder.decode(value)
+            onChunk(chunk)
+        }
+    } catch (err) {
+        console.log("Error refining note", err)
+    }
+}
+
 export async function createNewSubNote(page_id: string, title: string, content?: any) {
     try {
         const response = await fetch(`${BACKEND_URL}/notes/${page_id}/subnotes`, {

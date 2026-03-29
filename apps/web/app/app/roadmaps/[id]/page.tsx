@@ -300,9 +300,11 @@ const page = () => {
                         if (parsed.nodes) {
                             setNodes((prev) => {
                                 const nodeMap = new Map(prev.map(n => [n.id, n]));
-                                parsed.nodes.forEach((newNode: Node) => {
+                                parsed.nodes.forEach((node: Node) => {
+                                    const newNode = { ...node, type: 'roadmap' };
+                                    
                                     if (!newNode.position) {
-                                        newNode.position = { x: 500, y: (prev.length * 100) + 500 };
+                                        newNode.position = { x: 500, y: (prev.length * 300) + 500 };
                                     }
                                     if (!newNode.data) newNode.data = {};
                                     if (newNode.data.isCompleted === undefined) {
@@ -356,7 +358,7 @@ const page = () => {
     if (!mounted) return null;
 
     return (
-        <ResizablePanelGroup orientation="horizontal" className="h-screen w-full bg-background transition-all duration-500">
+        <ResizablePanelGroup orientation="horizontal" className="h-full w-full bg-background transition-all duration-500">
             {ToastComponent}
             {user.id === owner ? (
                 <ResizablePanel minSize={200} maxSize={350} defaultSize="20%">
@@ -514,12 +516,15 @@ const page = () => {
                             onNodeDragStart={onNodeDragStart}
                             nodeTypes={{ roadmap: RoadmapNode }}
                             defaultEdgeOptions={defaultEdgeOptions}
-                            colorMode={resolvedTheme as 'light' | 'dark' | 'system'}
+                            colorMode="dark"
                             nodesDraggable={isEditMode}
                             nodesConnectable={isEditMode}
                             fitView
+                            style={{ 
+                                background: 'radial-gradient(circle at 50% 50%, #0f1115 0%, #050505 100%)' 
+                            }}
                         >
-                            <Background variant={BackgroundVariant.Dots} gap={24} size={1} color="rgba(255, 255, 255, 0.05)" />
+                            <Background variant={BackgroundVariant.Dots} gap={32} size={1} color="rgba(255, 255, 255, 0.03)" />
                         </ReactFlow>
                     )}
                 </div>

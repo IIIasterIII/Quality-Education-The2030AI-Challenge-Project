@@ -10,7 +10,7 @@ const Page = () => {
     if (!state.mounted) return null;
 
     return (
-        <div className="h-screen w-full bg-[#050505] overflow-hidden flex flex-col">
+        <div className="h-full w-full bg-[#050505] overflow-hidden flex flex-col">
             {ToastComponent}
             <GraphHeader graphData={state.graphData} />
             <GraphWorkspace 

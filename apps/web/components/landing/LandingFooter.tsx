@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import { Infinity } from 'lucide-react'
-import Link from 'next/link'
 
 export function LandingFooter() {
   return (
