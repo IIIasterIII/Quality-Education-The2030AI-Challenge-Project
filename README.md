@@ -1,19 +1,26 @@
----
-title: "Cognito"
-category: "Full Stack Web Dev"
-technologies: [
-  "Next.js", "React", "TypeScript", "Redux Toolkit", "Tailwind CSS", "Shadcn/UI", 
-  "Framer Motion", "React Flow", "Tiptap", "KaTeX", "Plotly.js", "React Force Graph",
-  "FastAPI", "PostgreSQL", "Firebase", "AWS S3", "SQLAlchemy"
-]
----
-
 # Project Description
 
 **Cognito** is an advanced AI-powered cognitive lab engineered for reinforced learning, systematic note-taking, and knowledge mastery. 
 The platform empowers users to build deep, structural connections between subjects, generate complex, interactive learning roadmaps automatically via Artificial Intelligence, write rich, math (with automatic cloud image syncing), and visualize mathematical and conceptual paradigms dynamically in real-time. 
 
-![Main Page](/MainPage.png)
+![Main Page](apps/web/public/MainPage.png)
+
+#### Frontend
+![Next.js](https://img.shields.io/badge/Next.js-000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Redux](https://img.shields.io/badge/Redux-593D88?style=for-the-badge&logo=redux&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
+
+#### Backend & Database
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
+
+#### Cloud & Tools
+![AWS](https://img.shields.io/badge/AWS_S3-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
 # Technology Stack
 
@@ -51,7 +58,7 @@ The platform empowers users to build deep, structural connections between subjec
 *   **Dual Authentication Logic**: Users can create an account organically via an Email address and Password, or via a streamlined one-click **Sign in with Google** button. Both methods speak simultaneously to Firebase and your Postgres database, ensuring user creation logic is perfectly synchronized.
 *   **HttpOnly Token Passing**: Upon logging via Firebase, a token is intercepted via the `router.ts` API. A backend server securely validates this token and sets an `HttpOnly` and `Secure` cookie. If the user returns a week later, they are instantly logged in without prompt.
 
-![Auth Screen](/AuthScreen.png)
+![Auth Screen](apps/web/public/AuthScreen.png)
 
 ## 2. Core Functional Hubs
 
@@ -63,7 +70,7 @@ A fully interactive canvas for planning learning trajectories.
 *   **Interactive Node Canvas**: Using `react-flow`, users can interact with these nodes. You can drag them, zoom across a massive canvas, and double-click to view the precise description of what that specific topic means.
 *   **Real-time Saving & Publishing**: Users can save a roadmap draft. They can upload custom thumbnails explicitly for that roadmap, rename it, and flip a toggle making it "Public", which instantly pushes it to the Community Hub.
 
-![Roadmap Architect](/RoadmapArchitect.png)
+![Roadmap Architect](apps/web/public/RoadmapArchitect.png)
 
 ### The Notes Ecosystem (`/app/notes`)
 Not just a text box, but a complex, infinite-depth tree system simulating a physical brain.
@@ -74,7 +81,7 @@ Not just a text box, but a complex, infinite-depth tree system simulating a phys
 *   **Storage Hygiene**: Every time the editor saves, the backend cross-references the current images in the text against the images assigned to that note ID in the database. Orphaned images are brutally purged from the S3 bucket to save space natively.
 *   **Debounced Autosave**: Automatic background saving occurs via an optimized 1.5-second debounce system. You never have to hit "Save".
 
-![Notes Editor](/NotesEditor.png)
+![Notes Editor](apps/web/public/NotesEditor.png)
 
 ### Knowledge Graphs (Graph Hub) (`/app/graph`)
 Visualization tools mapping out how your subjects connect.
@@ -82,7 +89,7 @@ Visualization tools mapping out how your subjects connect.
 *   **Physics Engine**: Powered by WebGL and Web-Canvas force engines. The nodes representing notes/roadmaps physically repulse and attract each other optimally in real time to form natural clustering shapes, helping visualize core concepts visually.
 *   **Hover Interactivity**: Nodes highlight gracefully upon hovering, drawing direct lines exclusively to their connected topics to map dependencies efficiently.
 
-![Knowledge Graph 3D](/KnowledgeGraph.png)
+![Knowledge Graph 3D](apps/web/public/KnowledgeGraph.png)
 
 ### Math Workbench (`/app/notes/math`)
 A specialized sandbox designed strictly to visualize pure mathematics contextually.
