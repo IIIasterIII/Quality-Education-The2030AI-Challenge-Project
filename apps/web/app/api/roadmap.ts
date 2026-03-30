@@ -1,5 +1,4 @@
 import { RoadMapCreateData } from "../types/user"
-
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export async function createRoadmap(data: RoadMapCreateData) {
@@ -27,9 +26,15 @@ export async function getRoadmaps(page: number = 1, limit: number = 10) {
             method: "GET",
             credentials: "include",
         })
+        
+        if (!response.ok) {
+            console.error(`Error getting roadmaps: ${response.status} ${response.statusText}`)
+            return null
+        }
+        
         return await response.json()
     } catch (err) {
-        console.log("Error getting roadmaps", err)
+        console.error("Error getting roadmaps", err)
         return null
     }
 }
@@ -57,9 +62,15 @@ export async function getAllRoadmapData(roadmapId: string) {
             method: "GET",
             credentials: "include",
         })
+        
+        if (!response.ok) {
+            console.error(`Error getting all roadmap data: ${response.status} ${response.statusText}`)
+            return null
+        }
+        
         return await response.json()
     } catch (err) {
-        console.log("Error getting all roadmap data", err)
+        console.error("Error getting all roadmap data", err)
         return null
     }
 }
@@ -73,9 +84,15 @@ export async function getCommunityRoadmaps(page: number = 1, limit: number = 20,
             method: "GET",
             credentials: "include",
         })
+        
+        if (!response.ok) {
+            console.error(`Error getting community roadmaps: ${response.status} ${response.statusText}`)
+            return null
+        }
+        
         return await response.json()
     } catch (err) {
-        console.log("Error getting community roadmaps", err)
+        console.error("Error getting community roadmaps", err)
         return null
     }
 }

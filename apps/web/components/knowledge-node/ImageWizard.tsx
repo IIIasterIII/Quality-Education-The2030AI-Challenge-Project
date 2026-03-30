@@ -1,7 +1,6 @@
 "use client"
 import React from 'react'
 import { Plus, ImageIcon, RotateCcw, MoreHorizontal, AlignLeft, AlignCenter, AlignRight } from "lucide-react"
-import { Input } from "@workspace/ui/components/input"
 import { Button } from "@workspace/ui/components/button"
 import { Slider } from "@workspace/ui/components/slider"
 
@@ -24,7 +23,6 @@ export const ImageWizard = ({
     isOpen,
     onClose,
     imgUrl,
-    setImgUrl,
     imgRotation,
     setImgRotation,
     imgScale,

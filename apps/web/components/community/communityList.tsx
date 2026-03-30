@@ -8,7 +8,7 @@ import RoadMapList from './element/roadMapList'
 
 const CommunityList = ({ roadmaps }: { roadmaps: RoadMap[] }) => {
     const [searchTerm, setSearchTerm] = useState<string>("")
-    const filteredRoadmaps = roadmaps.filter(
+    const filteredRoadmaps = (roadmaps || []).filter(
         r => r.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         r.description.toLowerCase().includes(searchTerm.toLowerCase())
     )
