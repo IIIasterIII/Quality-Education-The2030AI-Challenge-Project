@@ -38,17 +38,17 @@ export const GraphWorkspace = ({ state, actions, refs }: { state: any; actions: 
                     <GraphLegend groupColors={groupColors} />
                     {history.length > 0 && (
                         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50">
-                            <Button 
+                            <Button
                                 onClick={goBack}
                                 className="rounded-2xl bg-primary/20 hover:bg-primary/40 backdrop-blur-2xl border border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest px-8 h-12 shadow-[0_0_30px_rgba(0,0,0,0.5)]"
                             >
-                                <ChevronRight className="w-4 h-4 rotate-180 mr-2" /> 
+                                <ChevronRight className="w-4 h-4 rotate-180 mr-2" />
                                 Back to Level {history.length}
                             </Button>
                         </div>
                     )}
 
-                    <KnowledgeGraph 
+                    <KnowledgeGraph
                         graphRef={graphRef}
                         filteredData={filteredData}
                         dimensions={dimensions}
@@ -64,7 +64,7 @@ export const GraphWorkspace = ({ state, actions, refs }: { state: any; actions: 
             <ResizablePanel maxSize={500} minSize={300} defaultSize={400} className="relative overflow-hidden shrink-0">
                 <div className="h-full bg-card/30 backdrop-blur-2xl flex flex-col overflow-hidden border-l border-border/10">
                     {selectedNode ? (
-                        <SubjectDetails 
+                        <SubjectDetails
                             key={selectedNode.id}
                             selectedNode={selectedNode}
                             historyLength={history.length}
@@ -74,7 +74,7 @@ export const GraphWorkspace = ({ state, actions, refs }: { state: any; actions: 
                             onUpdateSubNote={handleUpdateSubNote}
                         />
                     ) : (
-                        <SubjectDirectory 
+                        <SubjectDirectory
                             filteredNodes={filteredNodes}
                             historyLength={history.length}
                             groupColors={groupColors}

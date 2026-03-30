@@ -1,7 +1,7 @@
 import React from 'react'
-import { MainGraphData } from './types'
+import { MainGraphData } from '@/app/types/graph'
 
-export const GraphHeader = ({ graphData } : { graphData: MainGraphData[]}) => {
+export const GraphHeader = ({ graphData }: { graphData: MainGraphData[] }) => {
     return (
         <div className="h-12 border-b border-border/40 bg-background/40 backdrop-blur-md z-100">
             <div className="h-full max-w-7xl mx-auto px-6 flex items-center justify-between">

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useToast } from '@/components/toast'
 import { Node, GraphData } from '@/components/graph/types'
 import { getGraphData, updateNoteStats } from '@/app/api/notes'
-import { MainGraphData } from './types'
+import { MainGraphData } from '@/app/types/graph'
 
 export const useGraphState = () => {
     const { showToast, ToastComponent } = useToast()
