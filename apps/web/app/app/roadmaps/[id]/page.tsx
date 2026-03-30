@@ -2,17 +2,17 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@workspace/ui/components/resizable'
 import { useParams, useRouter } from 'next/navigation'
-import { startStreaming } from '@/components/roadMapsComponents/startStreaming'
-import { 
-    ReactFlow, 
-    applyNodeChanges, 
-    applyEdgeChanges, 
-    addEdge, 
-    Node, 
-    Edge, 
-    OnNodesChange, 
-    OnEdgesChange, 
-    OnConnect, 
+import { startStreaming } from '@/components/roadMaps/startStreaming'
+import {
+    ReactFlow,
+    applyNodeChanges,
+    applyEdgeChanges,
+    addEdge,
+    Node,
+    Edge,
+    OnNodesChange,
+    OnEdgesChange,
+    OnConnect,
     Connection,
     Background,
     BackgroundVariant,
@@ -20,17 +20,17 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTheme } from 'next-themes';
-import { RoadmapNode } from '@/components/roadMapsComponents/RoadmapNode';
+import { RoadmapNode } from '@/components/roadMaps/RoadmapNode';
 import { Button } from '@workspace/ui/components/button';
-import { 
-    AlertDialog, 
-    AlertDialogAction, 
-    AlertDialogCancel, 
-    AlertDialogContent, 
-    AlertDialogDescription, 
-    AlertDialogFooter, 
-    AlertDialogHeader, 
-    AlertDialogTitle 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
 } from '@workspace/ui/components/alert-dialog';
 import { Plus, Save, Edit3, Eye, Trash2, Settings2, Undo2, Loader2, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { Input } from '@workspace/ui/components/input';
@@ -38,11 +38,12 @@ import { Textarea } from '@workspace/ui/components/textarea';
 import { saveChanges, getAllRoadmapData, copyRoadmap } from '@/app/api/roadmap';
 import { useToast } from '@/components/toast';
 import { useAppSelector } from '@/app/store/hooks';
+import { Snapshot } from '@/app/types/roadMap'
 
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
     animated: true,
-    style: { 
+    style: {
         stroke: '#71fd64ff',
         strokeWidth: 2,
     },
@@ -50,11 +51,6 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
         type: "arrow",
         color: '#71fd64ff',
     },
-};
-
-type Snapshot = {
-    nodes: Node[];
-    edges: Edge[];
 };
 
 const getMissingAncestors = (nodeId: string, nodes: Node[], edges: Edge[], visited = new Set<string>()): Node[] => {
@@ -95,7 +91,6 @@ const page = () => {
     const params = useParams()
     const id = params.id as string
     const router = useRouter()
-    const { resolvedTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
     const [isEditMode, setIsEditMode] = useState(false)
     const [topic, setTopic] = useState("")
@@ -139,11 +134,11 @@ const page = () => {
     }, [id]);
 
     const currentNode = selectedNode ? nodes.find(n => n.id === selectedNode.id) : null;
-    
+
     const takeSnapshot = useCallback(() => {
-        setPast(prev => [...prev.slice(-30), { 
-            nodes: JSON.parse(JSON.stringify(nodes)), 
-            edges: JSON.parse(JSON.stringify(edges)) 
+        setPast(prev => [...prev.slice(-30), {
+            nodes: JSON.parse(JSON.stringify(nodes)),
+            edges: JSON.parse(JSON.stringify(edges))
         }]);
     }, [nodes, edges]);
     const handleUndo = useCallback(() => {
@@ -168,10 +163,10 @@ const page = () => {
         setEdges((eds) => applyEdgeChanges(changes, eds))
     }, []);
 
-    const onConnect: OnConnect = useCallback((params: Connection) => { 
+    const onConnect: OnConnect = useCallback((params: Connection) => {
         if (!isEditMode) return;
         takeSnapshot();
-        setEdges((eds) => addEdge({ ...params, animated: true }, eds)) 
+        setEdges((eds) => addEdge({ ...params, animated: true }, eds))
     }, [isEditMode, takeSnapshot]);
 
     const onNodeClick = useCallback((_: any, node: Node) => { setSelectedNode(node) }, []);
@@ -180,7 +175,7 @@ const page = () => {
     const handleToggleComplete = useCallback((nodeId: string) => {
         const nodeToToggle = nodes.find(n => n.id === nodeId);
         if (!nodeToToggle) return;
-        
+
         takeSnapshot();
         const currentlyCompleted = nodeToToggle.data?.isCompleted;
         if (!currentlyCompleted) {
@@ -259,7 +254,7 @@ const page = () => {
             console.log("SAVING TO BACKEND...");
             const data = await saveChanges(id, nodes, edges);
             if (data) {
-                setPast([]); 
+                setPast([]);
                 setIsEditMode(false);
                 showToast("Roadmap saved successfully!", "success");
             }
@@ -277,7 +272,7 @@ const page = () => {
 
     const handleActualReset = () => {
         fetchedIdRef.current = null;
-        window.location.reload(); 
+        window.location.reload();
     };
 
 
@@ -302,7 +297,7 @@ const page = () => {
                                 const nodeMap = new Map(prev.map(n => [n.id, n]));
                                 parsed.nodes.forEach((node: Node) => {
                                     const newNode = { ...node, type: 'roadmap' };
-                                    
+
                                     if (!newNode.position) {
                                         newNode.position = { x: 500, y: (prev.length * 300) + 500 };
                                     }
@@ -325,7 +320,7 @@ const page = () => {
                                 return Array.from(edgeMap.values());
                             });
                         }
-                        setStreamingText(""); 
+                        setStreamingText("");
                     } catch (e) {
                         console.error("Failed to parse AI response:", e);
                     }
@@ -363,122 +358,112 @@ const page = () => {
             {user.id === owner ? (
                 <ResizablePanel minSize={200} maxSize={350} defaultSize="20%">
 
-                <div className="flex h-full flex-col p-6 border-r border-white/10 bg-card/40 backdrop-blur-2xl">
-                    <div className="flex items-center justify-between mb-10">
-                        <h2 className="text-sm font-bold tracking-widest uppercase text-muted-foreground/50">Navigator</h2>
-                        <Settings2 className="w-4 h-4 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer" />
-                    </div>
-
-                    <div className="space-y-5 flex-1 overflow-y-auto no-scrollbar pb-6">
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5 shadow-inner group transition-colors hover:border-white/10">
-                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">Current Roadmap</p>
-                            <p className="text-xs font-mono truncate text-primary/80">ID: {id}</p>
+                    <div className="flex h-full flex-col p-6 border-r border-white/10 bg-card/40 backdrop-blur-2xl">
+                        <div className="flex items-center justify-between mb-10">
+                            <h2 className="text-sm font-bold tracking-widest uppercase text-muted-foreground/50">Navigator</h2>
+                            <Settings2 className="w-4 h-4 text-muted-foreground/30 hover:text-primary transition-colors cursor-pointer" />
                         </div>
 
-                        <div className='flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/5'>
-                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI Architect</p>
-                            <Input
-                                placeholder="Topic (e.g. Python basics)"
-                                value={topic}
-                                onChange={(e) => setTopic(e.target.value)}
-                                className="h-9 rounded-lg bg-black/40 border-white/10 text-xs focus-visible:ring-primary/20"
-                            />
-                            <Button 
-                                onClick={handleGenerate} 
-                                disabled={!topic || isGenerating}
-                                className="w-full h-9 gap-2 rounded-lg bg-primary hover:bg-primary/90 text-black font-bold text-xs transition-all shadow-lg shadow-primary/10"
-                            >
-                                {isGenerating ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <RefreshCcw className={`w-4 h-4 ${streamingText ? 'animate-spin' : ''}`} />
-                                )}
-                                {isGenerating 
-                                    ? (streamingText ? 'Generating...' : 'Connecting...') 
-                                    : 'Generate with AI'}
-                            </Button>
-
-                        </div>
-
-
-                        <div className="space-y-3">
-                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Display Mode</p>
-                            <div className="flex p-1 bg-secondary/40 rounded-xl border border-border/50">
-                                <button 
-                                    onClick={() => setIsEditMode(false)}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${!isEditMode ? 'bg-background shadow-md text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    <Eye className="w-3.5 h-3.5" /> View
-                                </button>
-                                <button 
-                                    onClick={() => setIsEditMode(true)}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${isEditMode ? 'bg-background shadow-md text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    <Edit3 className="w-3.5 h-3.5" /> Edit
-                                </button>
+                        <div className="space-y-5 flex-1 overflow-y-auto no-scrollbar pb-6">
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/5 shadow-inner group transition-colors hover:border-white/10">
+                                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-1">Current Roadmap</p>
+                                <p className="text-xs font-mono truncate text-primary/80">ID: {id}</p>
                             </div>
-                        </div>
 
-                        {isEditMode && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
-                                <div className="space-y-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">History</p>
-                                    <Button variant="outline" size="sm" onClick={handleUndo} disabled={past.length === 0} className="w-full gap-2 rounded-xl border-primary/20">
-                                        <Undo2 className="w-4 h-4" /> Undo ({past.length})
-                                    </Button>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Canvas Actions</p>
-                                    <Button variant="outline" size="sm" onClick={addNode} className="w-full gap-2 rounded-xl border-dashed border-2">
-                                        <Plus className="w-4 h-4" /> Add Step
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={deleteNode} disabled={!selectedNode} className="w-full gap-2 rounded-xl text-destructive hover:bg-destructive/5">
-                                        <Trash2 className="w-4 h-4" /> Delete selected
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="pt-6 border-t border-white/5">
-                        {isEditMode ? (
-                            <div className="space-y-3">
-                                <Button onClick={saveToServer} disabled={isSaving} className="w-full h-11 gap-2 rounded-lg bg-white text-black hover:bg-white/90 font-bold text-xs transition-all">
-                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                    Save Protocol
+                            <div className='flex flex-col gap-3 p-4 bg-white/5 rounded-xl border border-white/5'>
+                                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI Architect</p>
+                                <Input
+                                    placeholder="Topic (e.g. Python basics)"
+                                    value={topic}
+                                    onChange={(e) => setTopic(e.target.value)}
+                                    className="h-9 rounded-lg bg-black/40 border-white/10 text-xs focus-visible:ring-primary/20"
+                                />
+                                <Button
+                                    onClick={handleGenerate}
+                                    disabled={!topic || isGenerating}
+                                    className="w-full h-9 gap-2 rounded-lg bg-primary hover:bg-primary/90 text-black font-bold text-xs transition-all shadow-lg shadow-primary/10"
+                                >
+                                    {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className={`w-4 h-4 ${streamingText ? 'animate-spin' : ''}`} />}
+                                    {isGenerating ? (streamingText ? 'Generating...' : 'Connecting...') : 'Generate with AI'}
                                 </Button>
-                                <Button variant="ghost" onClick={discardChanges} className="w-full text-[10px] text-muted-foreground hover:text-white font-bold h-8">Discard unsaved</Button>
+
                             </div>
-                        ) : (
-                            <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
-                                <p className="text-[10px] text-primary font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
-                                    <Eye className="w-3 h-3" /> View Mode Active
-                                </p>
+
+
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Display Mode</p>
+                                <div className="flex p-1 bg-secondary/40 rounded-xl border border-border/50">
+                                    <button
+                                        onClick={() => setIsEditMode(false)}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${!isEditMode ? 'bg-background shadow-md text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        <Eye className="w-3.5 h-3.5" /> View
+                                    </button>
+                                    <button
+                                        onClick={() => setIsEditMode(true)}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all ${isEditMode ? 'bg-background shadow-md text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                    >
+                                        <Edit3 className="w-3.5 h-3.5" /> Edit
+                                    </button>
+                                </div>
                             </div>
-                        )}
+
+                            {isEditMode && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">History</p>
+                                        <Button variant="outline" size="sm" onClick={handleUndo} disabled={past.length === 0} className="w-full gap-2 rounded-xl border-primary/20">
+                                            <Undo2 className="w-4 h-4" /> Undo ({past.length})
+                                        </Button>
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Canvas Actions</p>
+                                        <Button variant="outline" size="sm" onClick={addNode} className="w-full gap-2 rounded-xl border-dashed border-2">
+                                            <Plus className="w-4 h-4" /> Add Step
+                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={deleteNode} disabled={!selectedNode} className="w-full gap-2 rounded-xl text-destructive hover:bg-destructive/5">
+                                            <Trash2 className="w-4 h-4" /> Delete selected
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="pt-6 border-t border-white/5">
+                            {isEditMode ? (
+                                <div className="space-y-3">
+                                    <Button onClick={saveToServer} disabled={isSaving} className="w-full h-11 gap-2 rounded-lg bg-white text-black hover:bg-white/90 font-bold text-xs transition-all">
+                                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                        Save Protocol
+                                    </Button>
+                                    <Button variant="ghost" onClick={discardChanges} className="w-full text-[10px] text-muted-foreground hover:text-white font-bold h-8">Discard unsaved</Button>
+                                </div>
+                            ) : (
+                                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-center">
+                                    <p className="text-[10px] text-primary font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
+                                        <Eye className="w-3 h-3" /> View Mode Active
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
                 </ResizablePanel>
             ) : (
                 <div className="absolute top-6 left-6 z-50 animate-in slide-in-from-left-4 duration-500">
-                    <Button 
-                        onClick={handleCopy} 
+                    <Button
+                        onClick={handleCopy}
                         disabled={isCopying}
                         className="gap-2.5 h-11 px-6 rounded-xl bg-primary text-black font-bold shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
                     >
-                        {isCopying ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Plus className="w-4 h-4" />
-                        )}
+                        {isCopying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                         Copy to My Space
                     </Button>
                 </div>
             )}
-            
+
             <ResizableHandle withHandle />
-            
+
             <ResizablePanel defaultSize="60%" className="h-screen">
                 <div className="h-full w-full relative bg-background/50">
                     {streamingText && (
@@ -520,8 +505,8 @@ const page = () => {
                             nodesDraggable={isEditMode}
                             nodesConnectable={isEditMode}
                             fitView
-                            style={{ 
-                                background: 'radial-gradient(circle at 50% 50%, #0f1115 0%, #050505 100%)' 
+                            style={{
+                                background: 'radial-gradient(circle at 50% 50%, #0f1115 0%, #050505 100%)'
                             }}
                         >
                             <Background variant={BackgroundVariant.Dots} gap={32} size={1} color="rgba(255, 255, 255, 0.03)" />
@@ -529,21 +514,21 @@ const page = () => {
                     )}
                 </div>
             </ResizablePanel>
-            
+
             <ResizableHandle withHandle />
-            
+
             <ResizablePanel minSize={250} maxSize={450} defaultSize="25%">
                 <div className="flex h-full flex-col p-6 border-l border-white/10 bg-card/40 backdrop-blur-2xl shrink-0">
                     <h2 className="text-sm font-bold tracking-widest mb-10 uppercase text-muted-foreground/50">Information</h2>
-                    
+
                     {currentNode ? (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto no-scrollbar pb-6">
                             {isEditMode ? (
                                 <div className="space-y-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Step Title</label>
-                                        <Input 
-                                            value={currentNode.data.label as string} 
+                                        <Input
+                                            value={currentNode.data.label as string}
                                             onFocus={onEditFocus}
                                             onChange={(e) => updateNodeData('label', e.target.value)}
                                             className="h-10 rounded-lg border-white/10 bg-black/40 text-sm focus-visible:ring-primary/20"
@@ -551,8 +536,8 @@ const page = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Description</label>
-                                        <Textarea 
-                                            value={currentNode.data.description as string || ''} 
+                                        <Textarea
+                                            value={currentNode.data.description as string || ''}
                                             onFocus={onEditFocus}
                                             onChange={(e) => updateNodeData('description', e.target.value)}
                                             className="rounded-lg border-white/10 bg-black/40 text-sm focus-visible:ring-primary/20 min-h-[160px] resize-none leading-relaxed p-4"
@@ -569,7 +554,7 @@ const page = () => {
                                         <h3 className="text-3xl font-bold tracking-tight text-foreground">{currentNode.data.label as string}</h3>
                                         <div className="h-0.5 w-12 bg-primary/40 rounded-full" />
                                     </div>
-                                    
+
                                     <div className="p-6 rounded-xl bg-white/5 border border-white/5">
                                         <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                                             {currentNode.data.description as string || 'No additional details provided for this protocol step.'}
@@ -589,11 +574,11 @@ const page = () => {
                                         </div>
                                     </div>
 
-                                    <Button 
+                                    <Button
                                         onClick={() => handleToggleComplete(currentNode.id)}
                                         className={`w-full h-12 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all active:scale-95 border
-                                            ${currentNode.data.isCompleted 
-                                                ? 'bg-transparent border-green-500/50 text-green-500 hover:bg-green-500/5' 
+                                            ${currentNode.data.isCompleted
+                                                ? 'bg-transparent border-green-500/50 text-green-500 hover:bg-green-500/5'
                                                 : 'bg-primary text-black border-transparent hover:bg-primary/90 shadow-lg shadow-primary/20'}`}
                                     >
                                         {currentNode.data.isCompleted ? 'Reset Protocol Step' : 'Confirm Step Protocol'}
@@ -629,7 +614,7 @@ const page = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-6">
                         <AlertDialogCancel className="rounded-xl border-border/50 font-bold">Nevermind</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogAction
                             onClick={handleActualReset}
                             className="rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black shadow-xl shadow-rose-500/20"
                         >

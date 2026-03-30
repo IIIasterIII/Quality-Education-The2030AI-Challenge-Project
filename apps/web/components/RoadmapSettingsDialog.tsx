@@ -25,13 +25,15 @@ import {
 import { useToast } from './toast'
 
 interface RoadmapSettingsDialogProps {
-    roadmap: RoadMap
+    roadmap: RoadMap | null
     open: boolean
     onOpenChange: (open: boolean) => void
     onUpdate: (updatedRoadmap: RoadMap) => void
 }
 
 export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ roadmap, open, onOpenChange, onUpdate }) => {
+    if (roadmap == null) return;
+
     const [isPublic, setIsPublic] = useState(roadmap.is_public || false)
     const [title, setTitle] = useState(roadmap.title)
     const [description, setDescription] = useState(roadmap.description || "")
@@ -55,13 +57,13 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
 
             if (sharingResult && metadataResult) {
                 showToast("Roadmap updated successfully", "success")
-                onUpdate({ 
-                    ...roadmap, 
+                onUpdate({
+                    ...roadmap,
                     title,
                     description,
-                    is_public: isPublic, 
+                    is_public: isPublic,
                     tags,
-                    image_url: metadataResult.image_url || roadmap.image_url 
+                    image_url: metadataResult.image_url || roadmap.image_url
                 })
                 onOpenChange(false)
             } else {
@@ -92,6 +94,7 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
         }
     }
 
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
@@ -108,13 +111,13 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
                 <div className="space-y-5 py-4 max-h-[60vh] overflow-y-auto no-scrollbar px-1">
                     <div className="space-y-2">
                         <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Project Identity</Label>
-                        <Input 
+                        <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Roadmap Title"
                             className="h-10 rounded-lg bg-white/5 border-white/10"
                         />
-                        <Textarea 
+                        <Textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Description"
@@ -135,8 +138,8 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
                                 )}
                             </div>
                             <div className="flex-1 space-y-1.5">
-                                <Input 
-                                    type="file" 
+                                <Input
+                                    type="file"
                                     accept="image/*"
                                     onChange={(e) => setImage(e.target.files?.[0] || null)}
                                     className="h-9 text-[10px] border-dashed bg-transparent"
@@ -154,7 +157,7 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
                                     Share this path with the community Explorer.
                                 </p>
                             </div>
-                            <Switch 
+                            <Switch
                                 checked={isPublic}
                                 onCheckedChange={setIsPublic}
                             />
@@ -169,7 +172,7 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
                                 </p>
                                 <p className="text-[10px] text-muted-foreground/60">This will permanently remove the roadmap and all its data.</p>
                             </div>
-                            
+
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 px-3 text-[10px] font-bold">
@@ -186,7 +189,7 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancel</AlertDialogCancel>
-                                        <AlertDialogAction 
+                                        <AlertDialogAction
                                             onClick={handleDelete}
                                             className="bg-destructive text-white hover:bg-destructive/90"
                                             disabled={deleting}
@@ -204,7 +207,7 @@ export const RoadmapSettingsDialog: React.FC<RoadmapSettingsDialogProps> = ({ ro
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         disabled={loading}
                         className="px-8 h-10 rounded-lg bg-primary text-black font-bold text-xs"
                         onClick={handleSave}

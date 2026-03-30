@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth, googleProvider } from "./firebase"
-import { signInWithPopup } from "firebase/auth"
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
 export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 export async function GET() {
@@ -23,6 +23,42 @@ export async function loginWithGoogle() {
     } catch (error) {
         console.error("Login error:", error)
         return null
+    }
+}
+
+export async function loginByEmail(email: string, pass: string) {
+    try {
+        const result = await signInWithEmailAndPassword(auth, email, pass)
+        const idToken = await result.user.getIdToken(true)
+        const response = await fetch(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+            credentials: 'include'
+        })
+        if (!response.ok) throw new Error('Backend sync failed')
+        return await response.json()
+    } catch (error) {
+        console.error("Email login error:", error)
+        throw error
+    }
+}
+
+export async function registerByEmail(email: string, pass: string) {
+    try {
+        const result = await createUserWithEmailAndPassword(auth, email, pass)
+        const idToken = await result.user.getIdToken(true)
+        const response = await fetch(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+            credentials: 'include'
+        })
+        if (!response.ok) throw new Error('Backend sync failed')
+        return await response.json()
+    } catch (error) {
+        console.error("Email registration error:", error)
+        throw error
     }
 }
 
